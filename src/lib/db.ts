@@ -70,3 +70,82 @@ export async function getMeta(db: D1Database): Promise<Record<string, string>> {
     .all<{ key: string; value: string }>();
   return Object.fromEntries(results.map((r) => [r.key, r.value]));
 }
+
+export interface LeaderRow {
+  anumber: string;
+  name: string;
+  depth: number;
+  depthDigits: number;
+  depthFirst: number | null;
+  first5: number | null;
+  digits3: number | null;
+}
+
+interface LeaderDbRow {
+  anumber: string;
+  name: string;
+  depth: number;
+  depth_digits: number;
+  depth_first: number | null;
+  first5: number | null;
+  digits3: number | null;
+}
+
+const LEADER_COLUMNS = 'anumber, name, depth, depth_digits, depth_first, first5, digits3';
+
+function toLeader(r: LeaderDbRow): LeaderRow {
+  return {
+    anumber: r.anumber,
+    name: r.name,
+    depth: r.depth,
+    depthDigits: r.depth_digits,
+    depthFirst: r.depth_first,
+    first5: r.first5,
+    digits3: r.digits3,
+  };
+}
+
+async function leaders(db: D1Database, where: string, order: string, limit: number) {
+  const { results } = await db
+    .prepare(`SELECT ${LEADER_COLUMNS} FROM sequences ${where} ORDER BY ${order} LIMIT ?`)
+    .bind(limit)
+    .all<LeaderDbRow>();
+  return results.map(toLeader);
+}
+
+/** Most leading terms found, longest digit string first among ties, then earliest. */
+export const deepest = (db: D1Database, limit = 25) =>
+  leaders(
+    db,
+    'WHERE depth > 0',
+    'depth DESC, depth_digits DESC, depth_first ASC, anumber ASC',
+    limit,
+  );
+
+/** Five leading terms found soonest. */
+export const earliest = (db: D1Database, limit = 25) =>
+  leaders(db, 'WHERE first5 IS NOT NULL', 'first5 ASC, anumber ASC', limit);
+
+/** Three leading terms that never appear, shortest digit string first. */
+export const rarest = (db: D1Database, limit = 25) =>
+  leaders(db, 'WHERE first3 IS NULL AND digits3 IS NOT NULL', 'digits3 ASC, anumber ASC', limit);
+
+export async function examples(db: D1Database, anumbers: readonly string[]): Promise<LeaderRow[]> {
+  if (anumbers.length === 0) return [];
+  const marks = anumbers.map(() => '?').join(',');
+  const { results } = await db
+    .prepare(`SELECT ${LEADER_COLUMNS} FROM sequences WHERE anumber IN (${marks})`)
+    .bind(...anumbers)
+    .all<LeaderDbRow>();
+  const byNumber = new Map(results.map((r) => [r.anumber, toLeader(r)]));
+  return anumbers.flatMap((a) => byNumber.get(a) ?? []);
+}
+
+export async function randomAnumber(db: D1Database): Promise<string | null> {
+  const row = await db
+    .prepare(
+      'SELECT anumber FROM sequences WHERE rowid >= (abs(random()) % (SELECT max(rowid) FROM sequences)) + 1 ORDER BY rowid LIMIT 1',
+    )
+    .first<{ anumber: string }>();
+  return row?.anumber ?? null;
+}

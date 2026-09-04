@@ -1,0 +1,122 @@
+---
+import { env } from 'cloudflare:workers';
+import Base from '../layouts/Base.astro';
+import { deepest, earliest, examples, getMeta, rarest, type LeaderRow } from '../lib/db';
+import { EXAMPLES, SHORT_NAMES } from '../lib/examples';
+import { formatNumber } from '../lib/format';
+import { RESULT_CACHE } from '../lib/respond';
+
+const [picked, deep, early, rare, meta] = await Promise.all([
+  examples(env.DB, EXAMPLES),
+  deepest(env.DB),
+  earliest(env.DB),
+  rarest(env.DB),
+  getMeta(env.DB),
+]);
+Astro.response.headers.set('Cache-Control', RESULT_CACHE);
+const total = formatNumber(Number(meta.digits ?? 0));
+const label = (r: LeaderRow) => SHORT_NAMES[r.anumber] ?? r.name;
+---
+
+<Base
+  title="Browse sequences in pi"
+  description="Well known sequences and the ones that go deepest, earliest, or never appear."
+>
+  <h1>Browse</h1>
+
+  <h2>Well known sequences</h2>
+  <ol class="examples">
+    {
+      picked.map((r) => (
+        <li>
+          <a href={`/${r.anumber}`}>
+            <span class="anumber">{r.anumber}</span> <span class="name">{label(r)}</span>
+          </a>
+          <span class="answer digits">
+            {r.depth > 0 && r.depthFirst !== null
+              ? `${r.depth} ${r.depth === 1 ? 'term' : 'terms'} at ${formatNumber(r.depthFirst)}`
+              : 'not found'}
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+
+  <h2>Deepest</h2>
+  <p class="muted small">
+    Sequences with the most leading terms found in the first {total} digits.
+  </p>
+  <table class="leaders">
+    <thead
+      ><tr
+        ><th scope="col">sequence</th><th scope="col" class="num">terms</th><th
+          scope="col"
+          class="num">digits</th
+        ><th scope="col" class="num">position</th></tr
+      ></thead
+    >
+    <tbody>
+      {
+        deep.map((r) => (
+          <tr>
+            <td>
+              <a href={`/${r.anumber}`}>
+                <span class="anumber">{r.anumber}</span> {r.name}
+              </a>
+            </td>
+            <td class="num">{r.depth}</td>
+            <td class="num">{r.depthDigits}</td>
+            <td class="num">{r.depthFirst !== null ? formatNumber(r.depthFirst) : ''}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <h2>Earliest</h2>
+  <p class="muted small">Sequences whose first five terms appear soonest.</p>
+  <table class="leaders">
+    <thead
+      ><tr><th scope="col">sequence</th><th scope="col" class="num">position of 5 terms</th></tr
+      ></thead
+    >
+    <tbody>
+      {
+        early.map((r) => (
+          <tr>
+            <td>
+              <a href={`/${r.anumber}`}>
+                <span class="anumber">{r.anumber}</span> {r.name}
+              </a>
+            </td>
+            <td class="num">{r.first5 !== null ? formatNumber(r.first5) : ''}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <h2>Rarest</h2>
+  <p class="muted small">Sequences whose first three terms never appear, shortest strings first.</p>
+  <table class="leaders">
+    <thead
+      ><tr><th scope="col">sequence</th><th scope="col" class="num">digits in 3 terms</th></tr
+      ></thead
+    >
+    <tbody>
+      {
+        rare.map((r) => (
+          <tr>
+            <td>
+              <a href={`/${r.anumber}`}>
+                <span class="anumber">{r.anumber}</span> {r.name}
+              </a>
+            </td>
+            <td class="num">{r.digits3}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <p class="muted small">OEIS snapshot {meta.snapshot}.</p>
+</Base>
