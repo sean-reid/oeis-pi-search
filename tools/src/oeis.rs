@@ -135,11 +135,11 @@ CREATE TABLE sequences (
   depth_first INTEGER,
   first3 INTEGER,
   digits3 INTEGER,
-  first5 INTEGER,
+  first8 INTEGER,
   has_negative INTEGER NOT NULL
 );
 CREATE INDEX sequences_deepest ON sequences (depth DESC, depth_digits DESC, depth_first ASC);
-CREATE INDEX sequences_earliest ON sequences (first5 ASC) WHERE first5 IS NOT NULL;
+CREATE INDEX sequences_earliest ON sequences (first8 ASC) WHERE first8 IS NOT NULL;
 CREATE INDEX sequences_rarest ON sequences (digits3 ASC) WHERE first3 IS NULL AND digits3 IS NOT NULL;
 CREATE VIRTUAL TABLE names_fts USING fts5(anumber UNINDEXED, name, tokenize='unicode61');
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -180,7 +180,7 @@ pub fn write_sql(
         }
         writeln!(
             out,
-            "INSERT INTO sequences (anumber, name, terms, staircase, rows, depth, depth_digits, depth_first, first3, digits3, first5, has_negative) VALUES"
+            "INSERT INTO sequences (anumber, name, terms, staircase, rows, depth, depth_digits, depth_first, first3, digits3, first8, has_negative) VALUES"
         )?;
         let values: Vec<&str> = buf.iter().map(|(v, _)| v.as_str()).collect();
         writeln!(out, "{};", values.join(",\n"))?;
@@ -213,7 +213,7 @@ pub fn write_sql(
             sql_opt(deepest.and_then(|r| r.first)),
             sql_opt(row_at(3).and_then(|r| r.first)),
             sql_opt(row_at(3).map(|r| r.digits.len() as u64)),
-            sql_opt(row_at(5).and_then(|r| r.first)),
+            sql_opt(row_at(8).and_then(|r| r.first)),
             u8::from(seq.terms.iter().any(|t| t.starts_with('-'))),
         );
         let name = format!("({}, {})", sql_str(&seq.anumber), sql_str(&seq.name));

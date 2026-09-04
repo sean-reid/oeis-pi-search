@@ -76,7 +76,7 @@ export interface LeaderRow {
   depth: number;
   depthDigits: number;
   depthFirst: number | null;
-  first5: number | null;
+  first8: number | null;
   digits3: number | null;
 }
 
@@ -86,11 +86,11 @@ interface LeaderDbRow {
   depth: number;
   depth_digits: number;
   depth_first: number | null;
-  first5: number | null;
+  first8: number | null;
   digits3: number | null;
 }
 
-const LEADER_COLUMNS = 'anumber, name, depth, depth_digits, depth_first, first5, digits3';
+const LEADER_COLUMNS = 'anumber, name, depth, depth_digits, depth_first, first8, digits3';
 
 function toLeader(r: LeaderDbRow): LeaderRow {
   return {
@@ -99,7 +99,7 @@ function toLeader(r: LeaderDbRow): LeaderRow {
     depth: r.depth,
     depthDigits: r.depth_digits,
     depthFirst: r.depth_first,
-    first5: r.first5,
+    first8: r.first8,
     digits3: r.digits3,
   };
 }
@@ -121,9 +121,9 @@ export const deepest = (db: D1Database, limit = 25) =>
     limit,
   );
 
-/** Five leading terms found soonest. */
+/** Eight leading terms found soonest. */
 export const earliest = (db: D1Database, limit = 25) =>
-  leaders(db, 'WHERE first5 IS NOT NULL', 'first5 ASC, anumber ASC', limit);
+  leaders(db, 'WHERE first8 IS NOT NULL', 'first8 ASC, anumber ASC', limit);
 
 /** Three leading terms that never appear, shortest digit string first. */
 export const rarest = (db: D1Database, limit = 25) =>
