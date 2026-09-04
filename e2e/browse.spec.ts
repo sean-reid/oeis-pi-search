@@ -38,7 +38,7 @@ test('browse shows the examples and three leaderboards', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Rarest' })).toBeVisible();
   const tables = page.locator('table.leaders');
   await expect(tables).toHaveCount(3);
-  await expect(tables.nth(0).locator('tbody tr').first()).toContainText('A000796');
+  await expect(tables.nth(0).locator('tbody tr').first()).toContainText('A000045');
   await expect(page.getByText('OEIS snapshot 2026-09-04')).toBeVisible();
 });
 
