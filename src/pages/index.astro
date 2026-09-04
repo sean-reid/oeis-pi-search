@@ -1,6 +1,14 @@
 ---
+import { env } from 'cloudflare:workers';
 import SearchForm from '../components/SearchForm.astro';
 import Base from '../layouts/Base.astro';
+import { examples } from '../lib/db';
+import { EXAMPLES, SHORT_NAMES } from '../lib/examples';
+import { formatNumber } from '../lib/format';
+import { RESULT_CACHE } from '../lib/respond';
+
+const picked = await examples(env.DB, EXAMPLES);
+Astro.response.headers.set('Cache-Control', RESULT_CACHE);
 ---
 
 <Base title="Where does a sequence first appear in pi?">
@@ -13,5 +21,37 @@ import Base from '../layouts/Base.astro';
   </p>
   <p class="muted small">
     Enter an OEIS A-number, a sequence name, terms separated by commas, or a plain string of digits.
+  </p>
+
+  <h2>Try one</h2>
+  <ol class="examples">
+    {
+      picked.map((r) => (
+        <li>
+          <a href={`/${r.anumber}`}>
+            <span class="anumber">{r.anumber}</span>{' '}
+            <span class="name">{SHORT_NAMES[r.anumber] ?? r.name}</span>
+          </a>
+          <span class="answer digits">
+            {r.depth > 0 && r.depthFirst !== null
+              ? `${r.depth} ${r.depth === 1 ? 'term' : 'terms'} at ${formatNumber(r.depthFirst)}`
+              : 'not found'}
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  <p><a href="/browse">Deepest, earliest, and rarest sequences</a></p>
+
+  <h2>How this works</h2>
+  <p>
+    Positions count from the first digit after the decimal point, so 1 is at position 1 and the
+    leading 3 is not searched. Terms are concatenated exactly as the OEIS lists them, leading zeros
+    included and minus signs dropped. The staircase stops when the next term would push the string
+    past twelve digits, because strings that long almost never occur in the first billion digits.
+  </p>
+  <p>
+    Every lookup is a handful of small reads against a precomputed index of the digits, never a
+    scan, so results for any A-number or digit string come back in a few milliseconds.
   </p>
 </Base>

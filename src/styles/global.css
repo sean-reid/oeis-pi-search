@@ -358,3 +358,123 @@ table.staircase a {
 .search input::-webkit-search-cancel-button {
   -webkit-appearance: none;
 }
+
+.search-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-field input {
+  width: 100%;
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  top: calc(100% - 1px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+.suggestions a {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+.suggestions .detail {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestions [aria-selected='true'] a,
+.suggestions a:hover {
+  background: color-mix(in srgb, var(--mark) 8%, transparent);
+}
+
+.examples {
+  padding-left: 0;
+  list-style: none;
+}
+
+.examples li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.examples a {
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.examples a:hover .name {
+  color: var(--mark);
+}
+
+.examples .answer {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+table.leaders {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+table.leaders th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+table.leaders td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: baseline;
+}
+
+table.leaders .num {
+  text-align: right;
+  font-family: var(--font-digits);
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+}
+
+table.leaders a {
+  text-decoration: none;
+}
+
+table.leaders a:hover {
+  color: var(--mark);
+}
+
+@media (max-width: 480px) {
+  .examples .anumber {
+    display: none;
+  }
+  table.leaders .anumber {
+    display: none;
+  }
+}
