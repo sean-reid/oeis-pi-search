@@ -48,7 +48,7 @@ test('comma separated terms are concatenated', async ({ page }) => {
 
 test('the search box routes each kind of input', async ({ page }) => {
   await page.goto('/');
-  const box = page.getByRole('searchbox', { name: /sequence/i });
+  const box = page.getByRole('combobox', { name: /sequence/i });
   await box.fill('a45');
   await box.press('Enter');
   await expect(page).toHaveURL(/\/A000045$/);
