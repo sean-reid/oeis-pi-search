@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+test-results/
+playwright-report/
+target/
+*.log
+.DS_Store
+.env
+.dev.vars
