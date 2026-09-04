@@ -65,20 +65,20 @@ impl Op {
         }
     }
 
-    /// Lower is simpler; used only to break ties.
-    pub fn cost(self) -> u8 {
+    /// Penalty in digits of agreement; simpler operations cost less.
+    pub fn penalty(self) -> f64 {
         match self {
-            Op::Identity => 0,
-            Op::Inverse => 1,
-            Op::Sqrt => 2,
-            Op::Square => 3,
-            Op::Cbrt => 4,
-            Op::Ln => 5,
-            Op::Log10 => 6,
-            Op::InverseSquare => 7,
-            Op::Cube => 8,
-            Op::Exp => 9,
-            Op::FourthRoot => 10,
+            Op::Identity => 0.0,
+            Op::Inverse => 0.3,
+            Op::Sqrt => 0.5,
+            Op::Square => 0.6,
+            Op::Cbrt => 0.8,
+            Op::InverseSquare => 1.0,
+            Op::Cube => 1.0,
+            Op::FourthRoot => 1.4,
+            Op::Ln => 1.5,
+            Op::Log10 => 1.6,
+            Op::Exp => 1.8,
         }
     }
 }
@@ -112,11 +112,11 @@ impl Constant {
         }
     }
 
-    fn cost(self) -> u32 {
+    /// Penalty in digits: nothing for no constant, then growing slowly with its size.
+    fn penalty(self) -> f64 {
         match self {
-            Constant::Times(1) => 0,
-            Constant::Over(c) => c,
-            Constant::Times(c) => c + 1,
+            Constant::Times(1) => 0.0,
+            Constant::Over(c) | Constant::Times(c) => 0.2 + c as f64 / 40.0,
         }
     }
 }
@@ -155,14 +155,19 @@ impl Frame {
         }
     }
 
-    fn cost(self) -> u32 {
+    /// Penalty in digits: adding a constant is the most contrived move.
+    fn penalty(self) -> f64 {
         match self {
-            Frame::Plain => 0,
-            Frame::Plus(k) => 40 + 5 * (3u32.saturating_sub(k as u32)),
-            Frame::FourMinus => 55,
+            Frame::Plain => 0.0,
+            Frame::Plus(3) => 1.5,
+            Frame::Plus(_) => 2.0,
+            Frame::FourMinus => 2.0,
         }
     }
 }
+
+/// Each term past the first adds digits to N, so it also adds a little to the penalty.
+const TERM_PENALTY: f64 = 0.15;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Approximation {
@@ -182,14 +187,25 @@ pub struct Approximation {
 }
 
 impl Approximation {
-    /// More digits, then fewer terms, then a cheaper constant, then a simpler operation.
+    pub fn penalty(&self) -> f64 {
+        self.op.penalty()
+            + self.constant.penalty()
+            + self.frame.penalty()
+            + TERM_PENALTY * (self.k as f64 - 1.0)
+    }
+
+    /// Digits of agreement less the complexity penalty; what the leaderboard ranks by.
+    pub fn score(&self) -> f64 {
+        self.digits - self.penalty()
+    }
+
+    /// Higher score, then fewer terms, then the smaller penalty.
     pub fn beats(&self, other: &Approximation) -> bool {
         let key = |a: &Approximation| {
             (
-                -(a.digits * 100.0).round() as i64,
+                -(a.score() * 100.0).round() as i64,
                 a.k,
-                a.frame.cost() + a.constant.cost(),
-                a.op.cost(),
+                (a.penalty() * 100.0).round() as i64,
             )
         };
         key(self) < key(other)
@@ -330,8 +346,14 @@ mod tests {
         assert_eq!(render(&a), "22 / 7");
         assert!((a.value - 22.0 / 7.0).abs() < 1e-12);
         assert!(a.digits > 3.0 && a.digits < 4.0);
-        let (_, with_frames) = show(&["7"]);
-        assert!(with_frames >= a.digits);
+    }
+
+    #[test]
+    fn simplicity_outweighs_a_contrived_extra_digit() {
+        let (expr, _) = show(&["7"]);
+        assert_eq!(expr, "22 / 7");
+        let (expr, _) = show(&["2", "23", "235", "2357", "235711", "23571113"]);
+        assert_eq!(expr, "3 + sqrt(2) / 10^1");
     }
 
     #[test]

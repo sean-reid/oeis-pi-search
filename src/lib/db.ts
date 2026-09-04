@@ -161,7 +161,7 @@ export interface PiApproximation {
 export async function piApproximations(db: D1Database, limit = 25): Promise<PiApproximation[]> {
   const { results } = await db
     .prepare(
-      'SELECT anumber, name, pi_expr AS expr, pi_value AS value, pi_digits AS digits FROM sequences WHERE pi_digits IS NOT NULL ORDER BY pi_digits DESC, rows ASC, anumber ASC LIMIT ?',
+      'SELECT anumber, name, pi_expr AS expr, pi_value AS value, pi_digits AS digits FROM sequences WHERE pi_digits IS NOT NULL ORDER BY pi_score DESC, rows ASC, anumber ASC LIMIT ?',
     )
     .bind(limit)
     .all<PiApproximation>();

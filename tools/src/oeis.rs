@@ -147,12 +147,13 @@ CREATE TABLE sequences (
   has_negative INTEGER NOT NULL,
   pi_digits REAL,
   pi_expr TEXT,
-  pi_value REAL
+  pi_value REAL,
+  pi_score REAL
 );
 CREATE INDEX sequences_deepest ON sequences (depth DESC, depth_digits DESC, depth_first ASC);
 CREATE INDEX sequences_earliest ON sequences (first8 ASC) WHERE first8 IS NOT NULL;
 CREATE INDEX sequences_rarest ON sequences (digits3 ASC) WHERE first3 IS NULL AND digits3 IS NOT NULL;
-CREATE INDEX sequences_pi ON sequences (pi_digits DESC) WHERE pi_digits IS NOT NULL;
+CREATE INDEX sequences_pi ON sequences (pi_score DESC) WHERE pi_score IS NOT NULL;
 CREATE VIRTUAL TABLE names_fts USING fts5(anumber UNINDEXED, name, tokenize='unicode61');
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 ";
@@ -192,7 +193,7 @@ pub fn write_sql(
         }
         writeln!(
             out,
-            "INSERT INTO sequences (anumber, name, terms, staircase, rows, depth, depth_digits, depth_first, first3, digits3, first8, has_negative, pi_digits, pi_expr, pi_value) VALUES"
+            "INSERT INTO sequences (anumber, name, terms, staircase, rows, depth, depth_digits, depth_first, first3, digits3, first8, has_negative, pi_digits, pi_expr, pi_value, pi_score) VALUES"
         )?;
         let values: Vec<&str> = buf.iter().map(|(v, _)| v.as_str()).collect();
         writeln!(out, "{};", values.join(",\n"))?;
@@ -224,7 +225,7 @@ pub fn write_sql(
             .map(String::as_str)
             .collect();
         let value = format!(
-            "({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})",
+            "({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})",
             sql_str(&seq.anumber),
             sql_str(&seq.name),
             sql_str(&terms.join(",")),
@@ -246,6 +247,9 @@ pub fn write_sql(
             approx
                 .as_ref()
                 .map_or("NULL".to_string(), |a| format!("{:.10}", a.value)),
+            approx
+                .as_ref()
+                .map_or("NULL".to_string(), |a| format!("{:.2}", a.score())),
         );
         let name = format!("({}, {})", sql_str(&seq.anumber), sql_str(&seq.name));
         buffered.push((value, name));
