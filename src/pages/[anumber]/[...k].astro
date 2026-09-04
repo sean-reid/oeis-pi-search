@@ -36,6 +36,7 @@ const title = record ? `${anumber} in pi: ${record.name}` : `No sequence ${anumb
   description={record
     ? `Where the first terms of ${record.name} appear in the digits of pi.`
     : undefined}
+  image={record ? `/og/${anumber}.png` : undefined}
 >
   {
     record && model ? (

@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.0",
-    "astro": "^7.3.1"
+    "astro": "^7.3.1",
+    "workers-og": "^0.0.27"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
