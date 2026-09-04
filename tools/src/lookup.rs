@@ -33,11 +33,16 @@ impl Index {
     }
 
     fn read_range(&self, file: &str, offset: u64, len: usize) -> Result<Vec<u8>> {
-        let path = self.dir.join(file);
-        let f = File::open(&path).with_context(|| format!("open {}", path.display()))?;
-        let mut buf = vec![0u8; len];
-        f.read_exact_at(&mut buf, offset)
-            .with_context(|| format!("read {file}@{offset}+{len}"))?;
+        let mut buf = Vec::with_capacity(len);
+        for (shard, within, take) in shard_ranges(offset, len, self.manifest.shard_bytes) {
+            let name = shard_name(file, shard);
+            let path = self.dir.join(&name);
+            let f = File::open(&path).with_context(|| format!("open {}", path.display()))?;
+            let start = buf.len();
+            buf.resize(start + take, 0);
+            f.read_exact_at(&mut buf[start..], within)
+                .with_context(|| format!("read {name}@{within}+{take}"))?;
+        }
         Ok(buf)
     }
 

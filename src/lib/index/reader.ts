@@ -1,8 +1,8 @@
 // Reads the index written by tools/ (see tools/src/format.rs for the layout). Every read is
-// a byte range against a named file so the same code runs over R2 and over the filesystem.
+// a byte range against a named shard so the same code runs over R2 and over the filesystem.
 
 export interface RangeSource {
-  read(file: string, offset: number, length: number): Promise<Uint8Array>;
+  read(object: string, offset: number, length: number): Promise<Uint8Array>;
 }
 
 export interface Manifest {
@@ -11,6 +11,7 @@ export interface Manifest {
   tableMax: number;
   bucketPrefix: number;
   maxQuery: number;
+  shardBytes: number;
   digitsSha256: string;
 }
 
@@ -30,6 +31,27 @@ const TABLE_ENTRY_BYTES = 8;
 const BUCKET_ENTRY_BYTES = 6;
 
 export const tableFile = (k: number) => `table${k}.bin`;
+export const shardName = (file: string, shard: number) =>
+  `${file}.${String(shard).padStart(3, '0')}`;
+
+/** Splits a byte range into [shard, offsetWithinShard, length] pieces. */
+export function shardRanges(
+  offset: number,
+  length: number,
+  shardBytes: number,
+): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  let remaining = length;
+  while (remaining > 0) {
+    const shard = Math.floor(offset / shardBytes);
+    const within = offset - shard * shardBytes;
+    const take = Math.min(shardBytes - within, remaining);
+    out.push([shard, within, take]);
+    offset += take;
+    remaining -= take;
+  }
+  return out;
+}
 
 export function parseDigits(s: string): number[] | null {
   if (!/^\d+$/.test(s)) return null;
@@ -98,9 +120,24 @@ export class PiIndex {
     return new PiIndex(source, manifest);
   }
 
+  private async readRange(file: string, offset: number, length: number): Promise<Uint8Array> {
+    const pieces = shardRanges(offset, length, this.manifest.shardBytes);
+    const parts = await Promise.all(
+      pieces.map(([shard, within, take]) => this.source.read(shardName(file, shard), within, take)),
+    );
+    if (parts.length === 1) return parts[0];
+    const out = new Uint8Array(length);
+    let at = 0;
+    for (const p of parts) {
+      out.set(p, at);
+      at += p.length;
+    }
+    return out;
+  }
+
   private async tableEntry(digits: number[]): Promise<{ first: number; count: number }> {
     const idx = digitsToIndex(digits);
-    const bytes = await this.source.read(
+    const bytes = await this.readRange(
       tableFile(digits.length),
       idx * TABLE_ENTRY_BYTES,
       TABLE_ENTRY_BYTES,
@@ -122,11 +159,11 @@ export class PiIndex {
     const idx = digitsToIndex(prefix);
     const [e, offBytes] = await Promise.all([
       this.tableEntry(prefix),
-      this.source.read(OFFSETS_FILE, idx * 4, 4),
+      this.readRange(OFFSETS_FILE, idx * 4, 4),
     ]);
     if (e.count === 0) return { first: null, count: 0 };
     const off = u32(offBytes, 0);
-    const bytes = await this.source.read(
+    const bytes = await this.readRange(
       BUCKETS_FILE,
       off * BUCKET_ENTRY_BYTES,
       e.count * BUCKET_ENTRY_BYTES,
@@ -149,7 +186,7 @@ export class PiIndex {
     const end = Math.min(start + length, n);
     const byteStart = Math.floor(start / 2);
     const byteEnd = Math.ceil(end / 2);
-    const bytes = await this.source.read(DIGITS_FILE, byteStart, byteEnd - byteStart);
+    const bytes = await this.readRange(DIGITS_FILE, byteStart, byteEnd - byteStart);
     return unpackDigits(bytes, start - byteStart * 2, end - start);
   }
 }

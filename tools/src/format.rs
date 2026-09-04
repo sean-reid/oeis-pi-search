@@ -7,6 +7,10 @@
 //! - `buckets.bin`: one `BucketEntry` per position that starts a full bucket_prefix-digit
 //!   string, grouped by that prefix and ordered by position within a group.
 //! - `index.json`: the `Manifest`.
+//!
+//! Every file is stored as fixed size shards named `{file}.{000}`, `{file}.{001}`, ... so no
+//! single object exceeds what the upload tooling accepts. A range read that crosses a shard
+//! boundary reads two shards. SHARD_BYTES is a multiple of every entry size.
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -21,6 +25,27 @@ pub const TABLE_ENTRY_BYTES: usize = 8;
 pub const BUCKET_ENTRY_BYTES: usize = 6;
 /// Digits stored past the bucket prefix, so the longest query is bucket_prefix + EXTRA_DIGITS.
 pub const EXTRA_DIGITS: usize = 4;
+pub const SHARD_BYTES: u64 = 240 * 1024 * 1024;
+
+pub fn shard_name(file: &str, shard: u64) -> String {
+    format!("{file}.{shard:03}")
+}
+
+/// Splits a byte range into (shard, offset within shard, length) pieces.
+pub fn shard_ranges(offset: u64, len: usize, shard_bytes: u64) -> Vec<(u64, u64, usize)> {
+    let mut out = Vec::with_capacity(2);
+    let mut offset = offset;
+    let mut remaining = len;
+    while remaining > 0 {
+        let shard = offset / shard_bytes;
+        let within = offset % shard_bytes;
+        let take = ((shard_bytes - within) as usize).min(remaining);
+        out.push((shard, within, take));
+        offset += take as u64;
+        remaining -= take;
+    }
+    out
+}
 
 pub fn table_file(k: usize) -> String {
     format!("table{k}.bin")
@@ -34,6 +59,7 @@ pub struct Manifest {
     pub table_max: usize,
     pub bucket_prefix: usize,
     pub max_query: usize,
+    pub shard_bytes: u64,
     pub digits_sha256: String,
 }
 
@@ -191,6 +217,16 @@ mod tests {
         assert!(!next_matches(e, &[1, 2, 0]));
         assert!(!next_matches(e, &[2]));
         assert!(next_matches(e, &[]));
+    }
+
+    #[test]
+    fn shard_ranges_split_at_boundaries() {
+        assert_eq!(shard_ranges(0, 8, 100), vec![(0, 0, 8)]);
+        assert_eq!(shard_ranges(96, 8, 100), vec![(0, 96, 4), (1, 0, 4)]);
+        assert_eq!(shard_ranges(200, 10, 100), vec![(2, 0, 10)]);
+        assert!(shard_ranges(5, 0, 100).is_empty());
+        assert_eq!(SHARD_BYTES % TABLE_ENTRY_BYTES as u64, 0);
+        assert_eq!(SHARD_BYTES % BUCKET_ENTRY_BYTES as u64, 0);
     }
 
     #[test]

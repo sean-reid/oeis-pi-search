@@ -3,7 +3,7 @@
 
 use pisearch::build::{build, BuildOptions};
 use pisearch::digits::DIGITS_FILE;
-use pisearch::format::{Manifest, BUCKETS_FILE, MANIFEST_FILE, OFFSETS_FILE};
+use pisearch::format::{shard_name, Manifest, BUCKETS_FILE, MANIFEST_FILE, OFFSETS_FILE};
 use std::path::PathBuf;
 
 fn fixture_dir() -> PathBuf {
@@ -15,7 +15,11 @@ fn committed_fixture_matches_the_writer() {
     let src = fixture_dir();
     let manifest = Manifest::load(&src).unwrap();
     let dir = tempfile::tempdir().unwrap();
-    std::fs::copy(src.join(DIGITS_FILE), dir.path().join(DIGITS_FILE)).unwrap();
+    std::fs::copy(
+        src.join(shard_name(DIGITS_FILE, 0)),
+        dir.path().join(DIGITS_FILE),
+    )
+    .unwrap();
     let opts = BuildOptions {
         table_max: manifest.table_max,
         bucket_prefix: manifest.bucket_prefix,
@@ -24,10 +28,11 @@ fn committed_fixture_matches_the_writer() {
     assert_eq!(rebuilt, manifest);
 
     let mut names: Vec<String> = (1..=manifest.table_max)
-        .map(pisearch::format::table_file)
+        .map(|k| shard_name(&pisearch::format::table_file(k), 0))
         .collect();
-    names.push(OFFSETS_FILE.into());
-    names.push(BUCKETS_FILE.into());
+    names.push(shard_name(OFFSETS_FILE, 0));
+    names.push(shard_name(BUCKETS_FILE, 0));
+    names.push(shard_name(DIGITS_FILE, 0));
     names.push(MANIFEST_FILE.into());
     for name in names {
         let a = std::fs::read(src.join(&name)).unwrap();

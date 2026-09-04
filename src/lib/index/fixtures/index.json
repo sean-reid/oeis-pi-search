@@ -4,5 +4,6 @@
   "tableMax": 3,
   "bucketPrefix": 3,
   "maxQuery": 7,
+  "shardBytes": 251658240,
   "digitsSha256": "451404d73f9a1aecc594b4400ee092099859ae977c170e49767088ad923df767"
 }

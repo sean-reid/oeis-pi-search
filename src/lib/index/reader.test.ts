@@ -2,7 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { decodeNext, parseDigits, PiIndex, unpackDigits, type RangeSource } from './reader';
+import {
+  decodeNext,
+  parseDigits,
+  PiIndex,
+  shardRanges,
+  unpackDigits,
+  type RangeSource,
+} from './reader';
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 
@@ -31,7 +38,13 @@ async function allDigits(index: PiIndex) {
 describe('PiIndex over the committed fixture', () => {
   it('reads the manifest', async () => {
     const index = await PiIndex.open(fileSource);
-    expect(index.manifest).toMatchObject({ version: 1, digits: 20000, tableMax: 3, maxQuery: 7 });
+    expect(index.manifest).toMatchObject({
+      version: 1,
+      digits: 20000,
+      tableMax: 3,
+      maxQuery: 7,
+      shardBytes: 240 * 1024 * 1024,
+    });
   });
 
   it('decodes the first digits of pi', async () => {
@@ -90,6 +103,38 @@ describe('helpers', () => {
     expect(decodeNext(11042)).toEqual({ avail: 2, digits: [4, 2] });
     expect(decodeNext(11100)).toEqual({ avail: 1, digits: [0] });
     expect(decodeNext(11110)).toEqual({ avail: 0, digits: [] });
+  });
+
+  it('splits ranges at shard boundaries', () => {
+    expect(shardRanges(0, 8, 100)).toEqual([[0, 0, 8]]);
+    expect(shardRanges(96, 8, 100)).toEqual([
+      [0, 96, 4],
+      [1, 0, 4],
+    ]);
+    expect(shardRanges(200, 10, 100)).toEqual([[2, 0, 10]]);
+  });
+
+  it('reads ranges that span two shards', async () => {
+    const index = await PiIndex.open(fileSource);
+    const small = { ...index.manifest, shardBytes: 1000 };
+    const shardedSource: RangeSource = {
+      async read(object, offset, length) {
+        const dot = object.lastIndexOf('.');
+        const file = object.slice(0, dot);
+        const shard = Number(object.slice(dot + 1));
+        return fileSource.read(`${file}.000`, shard * 1000 + offset, length);
+      },
+    };
+    const sharded = await PiIndex.open(shardedSource, small);
+    const digits = await allDigits(index);
+    expect(await sharded.digitsAt(1990, 30)).toEqual(digits.slice(1990, 2020));
+    for (const needle of [
+      [1, 4, 1, 5],
+      [9, 9, 9],
+      [2, 6, 5, 3, 5, 8],
+    ]) {
+      expect(await sharded.lookup(needle)).toEqual(await index.lookup(needle));
+    }
   });
 
   it('unpacks nibbles from an offset', () => {

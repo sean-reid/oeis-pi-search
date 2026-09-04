@@ -4,7 +4,7 @@ use anyhow::{bail, Context, Result};
 use rayon::prelude::*;
 use sha2::{Digest, Sha256};
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 use std::time::Instant;
 
@@ -30,6 +30,7 @@ pub fn build(dir: &Path, opts: &BuildOptions, log: &mut dyn Write) -> Result<Man
     let file =
         File::open(&digits_path).with_context(|| format!("open {}", digits_path.display()))?;
     let mmap = unsafe { memmap2::Mmap::map(&file)? };
+    shard_file(&digits_path)?;
     let len_bytes = mmap.len();
     let n = len_bytes * 2 - trailing_pad(&mmap);
     if n > u32::MAX as usize - 1 {
@@ -50,6 +51,7 @@ pub fn build(dir: &Path, opts: &BuildOptions, log: &mut dyn Write) -> Result<Man
             &dir.join(table_file(k + 1)),
             table.iter().map(|e| e.to_bytes()),
         )?;
+        shard_file(&dir.join(table_file(k + 1)))?;
     }
     writeln!(log, "tables written")?;
 
@@ -61,9 +63,12 @@ pub fn build(dir: &Path, opts: &BuildOptions, log: &mut dyn Write) -> Result<Man
         &dir.join(OFFSETS_FILE),
         offsets.iter().map(|o| o.to_le_bytes()),
     )?;
+    shard_file(&dir.join(OFFSETS_FILE))?;
     let mut out = BufWriter::with_capacity(1 << 24, File::create(dir.join(BUCKETS_FILE))?);
     out.write_all(&buckets)?;
     out.flush()?;
+    drop(out);
+    shard_file(&dir.join(BUCKETS_FILE))?;
     writeln!(log, "buckets written")?;
 
     let manifest = Manifest {
@@ -72,6 +77,7 @@ pub fn build(dir: &Path, opts: &BuildOptions, log: &mut dyn Write) -> Result<Man
         table_max: opts.table_max,
         bucket_prefix: opts.bucket_prefix,
         max_query: opts.bucket_prefix + EXTRA_DIGITS,
+        shard_bytes: SHARD_BYTES,
         digits_sha256: sha,
     };
     manifest.save(dir)?;
@@ -144,6 +150,33 @@ fn build_buckets(packed: &Packed, p: usize, prefix_table: &[TableEntry]) -> (Vec
         buckets[at..at + BUCKET_ENTRY_BYTES].copy_from_slice(&entry.to_bytes());
     }
     (offsets, buckets)
+}
+
+/// Replaces `path` with `path.000`, `path.001`, ... of SHARD_BYTES each. The digits file is
+/// left in place as well because the build reads it through a mapping.
+fn shard_file(path: &Path) -> Result<()> {
+    let name = path.file_name().unwrap().to_string_lossy().into_owned();
+    let dir = path.parent().unwrap();
+    let mut input = File::open(path)?;
+    let total = input.metadata()?.len();
+    let shards = total.div_ceil(SHARD_BYTES).max(1);
+    let mut buf = vec![0u8; 1 << 24];
+    for shard in 0..shards {
+        let mut remaining = (total - shard * SHARD_BYTES).min(SHARD_BYTES);
+        let mut out =
+            BufWriter::with_capacity(1 << 24, File::create(dir.join(shard_name(&name, shard)))?);
+        while remaining > 0 {
+            let take = (buf.len() as u64).min(remaining) as usize;
+            input.read_exact(&mut buf[..take])?;
+            out.write_all(&buf[..take])?;
+            remaining -= take as u64;
+        }
+        out.flush()?;
+    }
+    if name != DIGITS_FILE {
+        std::fs::remove_file(path)?;
+    }
+    Ok(())
 }
 
 fn write_entries<const N: usize>(
