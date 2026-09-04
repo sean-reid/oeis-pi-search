@@ -132,8 +132,9 @@ const label = (r: LeaderRow) => SHORT_NAMES[r.anumber] ?? r.name;
   <h2>Pi approximations</h2>
   <p class="muted small">
     Write a sequence's first terms out as one number, then reach pi with a small constant, a power
-    or root, a logarithm or an exponential, and a shift of the decimal point. Sequences whose names
-    mention pi are left out.
+    or root, a logarithm or an exponential, a shift of the decimal point, and at most one added
+    integer. Ranked by digits matched less a penalty for each of those moves, so plain forms win.
+    Sequences whose names mention pi, and decimal expansions of constants, are left out.
   </p>
   <table class="leaders">
     <thead>

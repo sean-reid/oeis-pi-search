@@ -122,10 +122,15 @@ pub fn parse_stripped(
     Ok(out)
 }
 
-/// Sequences defined in terms of pi would make trivial approximations.
-pub fn mentions_pi(name: &str) -> bool {
-    name.split(|c: char| !c.is_alphanumeric())
-        .any(|w| w.eq_ignore_ascii_case("pi"))
+/// Sequences defined in terms of pi, and decimal expansions of constants generally, make
+/// trivial approximations: many constants are pi or a rational multiple of it under another name.
+pub fn trivially_pi(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.contains("decimal expansion")
+        || lower.contains("decimal digits")
+        || lower
+            .split(|c: char| !c.is_alphanumeric())
+            .any(|w| w == "pi")
 }
 
 pub const SCHEMA: &str = "\
@@ -206,7 +211,7 @@ pub fn write_sql(
     let approximations: Vec<Option<piapprox::Approximation>> = sequences
         .par_iter()
         .map(|seq| {
-            if mentions_pi(&seq.name) {
+            if trivially_pi(&seq.name) {
                 None
             } else {
                 piapprox::best(&prefixes(&seq.terms, index.manifest.max_query))
@@ -327,11 +332,13 @@ mod tests {
     }
 
     #[test]
-    fn detects_pi_in_names() {
-        assert!(mentions_pi("Decimal expansion of Pi."));
-        assert!(mentions_pi("Continued fraction for pi"));
-        assert!(!mentions_pi("Number of pieces of pizza"));
-        assert!(!mentions_pi("Fibonacci numbers"));
+    fn detects_trivial_names() {
+        assert!(trivially_pi("Decimal expansion of Pi."));
+        assert!(trivially_pi("Continued fraction for pi"));
+        assert!(trivially_pi("Decimal expansion of arctan(10^50)."));
+        assert!(trivially_pi("Decimal digits of the golden ratio"));
+        assert!(!trivially_pi("Number of pieces of pizza"));
+        assert!(!trivially_pi("Fibonacci numbers"));
     }
 
     #[test]
