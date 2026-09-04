@@ -7,3 +7,4 @@ playwright-report/
 test-results/
 CHANGELOG.md
 src/lib/index/fixtures/
+worker-configuration.d.ts
