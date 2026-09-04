@@ -87,7 +87,7 @@ impl Index {
         )?;
         let mut first = None;
         let mut count = 0u64;
-        for chunk in bytes.chunks_exact(BUCKET_ENTRY_BYTES) {
+        for chunk in bytes.as_chunks::<BUCKET_ENTRY_BYTES>().0 {
             let b = BucketEntry::from_bytes(chunk);
             if next_matches(b.next, rest) {
                 count += 1;
