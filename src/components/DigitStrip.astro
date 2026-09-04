@@ -1,0 +1,23 @@
+---
+import { formatNumber } from '../lib/format';
+import type { Strip } from '../lib/result';
+
+interface Props {
+  strip: Strip;
+  hidden: boolean;
+}
+const { strip, hidden } = Astro.props;
+const leading = strip.position - 1 - strip.before.length > 0 ? '…' : '';
+---
+
+<figure class="strip" data-strip={strip.k} hidden={hidden}>
+  <pre
+    class="digits"
+    aria-label={`Digits of pi around position ${formatNumber(strip.position)}`}>{leading}{strip.before}<mark>{strip.match}</mark>{strip.after}…</pre>
+  <figcaption
+    class="digits"
+    style={`--offset: ${strip.before.length + leading.length}ch; --width: ${strip.match.length}ch`}
+  >
+    <span>position {formatNumber(strip.position)}</span>
+  </figcaption>
+</figure>

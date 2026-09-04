@@ -1,0 +1,24 @@
+---
+interface Props {
+  value?: string;
+  autofocus?: boolean;
+}
+const { value = '', autofocus = false } = Astro.props;
+---
+
+<form class="search" action="/search" method="get" role="search">
+  <label class="visually-hidden" for="q">Sequence, A-number, terms, or digits</label>
+  <input
+    id="q"
+    name="q"
+    type="search"
+    value={value}
+    placeholder="A000045, Fibonacci, 1, 1, 2, 3, 5, or 31415"
+    autocomplete="off"
+    autocapitalize="off"
+    spellcheck="false"
+    autofocus={autofocus}
+    required
+  />
+  <button type="submit">Find</button>
+</form>

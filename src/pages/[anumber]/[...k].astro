@@ -1,0 +1,69 @@
+---
+import { env } from 'cloudflare:workers';
+import Result from '../../components/Result.astro';
+import Base from '../../layouts/Base.astro';
+import { getSequence } from '../../lib/db';
+import { ANUMBER, canonicalAnumber } from '../../lib/format';
+import { openIndex } from '../../lib/index/r2-source';
+import { buildResult, parseRequestedK } from '../../lib/result';
+import { RESULT_CACHE } from '../../lib/respond';
+
+const { anumber, k } = Astro.params;
+if (!anumber || !ANUMBER.test(anumber)) {
+  const canonical = anumber ? canonicalAnumber(anumber) : null;
+  if (canonical) return Astro.redirect(`/${canonical}${k ? `/${k}` : ''}`, 301);
+  return new Response(null, { status: 404 });
+}
+if (k !== undefined && parseRequestedK(k) === undefined) return Astro.redirect(`/${anumber}`, 301);
+
+const record = await getSequence(env.DB, anumber);
+if (!record) {
+  Astro.response.status = 404;
+}
+const model = record
+  ? await buildResult(await openIndex(env.PI), record.staircase, parseRequestedK(k))
+  : null;
+if (record) Astro.response.headers.set('Cache-Control', RESULT_CACHE);
+
+const shownTerms = record
+  ? record.terms.slice(0, 16).join(', ') + (record.terms.length > 16 ? ', …' : '')
+  : '';
+const title = record ? `${anumber} in pi: ${record.name}` : `No sequence ${anumber}`;
+---
+
+<Base
+  title={title}
+  description={record
+    ? `Where the first terms of ${record.name} appear in the digits of pi.`
+    : undefined}
+>
+  {
+    record && model ? (
+      <>
+        <header class="sequence">
+          <h1>
+            <a class="anumber" href={`https://oeis.org/${anumber}`} rel="external">
+              {anumber}
+            </a>
+            <span class="name">{record.name}</span>
+          </h1>
+          <p class="terms digits">{shownTerms}</p>
+          {record.hasNegative && (
+            <p class="muted small">
+              This sequence has negative terms. Minus signs are dropped before searching.
+            </p>
+          )}
+        </header>
+        <Result model={model} base={`/${anumber}`} />
+      </>
+    ) : (
+      <>
+        <h1>No sequence {anumber}</h1>
+        <p>
+          The OEIS snapshot this site uses has no entry with that number. It may be newer than the
+          snapshot, or it may not exist. <a href={`https://oeis.org/${anumber}`}>Check oeis.org</a>.
+        </p>
+      </>
+    )
+  }
+</Base>

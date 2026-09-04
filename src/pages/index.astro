@@ -1,12 +1,17 @@
 ---
+import SearchForm from '../components/SearchForm.astro';
 import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Where does a sequence first appear in pi?">
   <h1>Where does a sequence first appear in pi?</h1>
+  <SearchForm autofocus />
   <p>
     Take the first few terms of an integer sequence, write them out as one string of digits, and
     look for that string in the decimal expansion of pi. This site tells you how far in you have to
     go, one row per term added, across the first billion digits.
+  </p>
+  <p class="muted small">
+    Enter an OEIS A-number, a sequence name, terms separated by commas, or a plain string of digits.
   </p>
 </Base>

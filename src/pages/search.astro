@@ -1,0 +1,45 @@
+---
+import { env } from 'cloudflare:workers';
+import SearchForm from '../components/SearchForm.astro';
+import Base from '../layouts/Base.astro';
+import { searchNames } from '../lib/db';
+import { parseInput } from '../lib/parse-input';
+import { SEARCH_CACHE } from '../lib/respond';
+
+const q = Astro.url.searchParams.get('q') ?? '';
+const parsed = parseInput(q);
+switch (parsed.kind) {
+  case 'empty':
+    return Astro.redirect('/', 302);
+  case 'anumber':
+    return Astro.redirect(`/${parsed.anumber}`, 302);
+  case 'digits':
+    return Astro.redirect(`/digits/${parsed.digits}`, 302);
+  case 'terms':
+    return Astro.redirect(`/terms/${parsed.terms.join(',')}`, 302);
+}
+const matches = await searchNames(env.DB, parsed.query, 25);
+Astro.response.headers.set('Cache-Control', SEARCH_CACHE);
+---
+
+<Base title={`Search: ${parsed.query}`}>
+  <h1>Sequences matching “{parsed.query}”</h1>
+  <SearchForm value={q} />
+  {
+    matches.length === 0 ? (
+      <p>
+        No sequence names match. Try an A-number, or paste the first few terms separated by commas.
+      </p>
+    ) : (
+      <ol class="matches">
+        {matches.map((m) => (
+          <li>
+            <a href={`/${m.anumber}`}>
+              <span class="anumber">{m.anumber}</span> {m.name}
+            </a>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</Base>

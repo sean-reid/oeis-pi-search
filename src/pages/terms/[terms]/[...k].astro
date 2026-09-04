@@ -1,0 +1,38 @@
+---
+import { env } from 'cloudflare:workers';
+import Result from '../../../components/Result.astro';
+import Base from '../../../layouts/Base.astro';
+import { openIndex } from '../../../lib/index/r2-source';
+import { buildResult, parseRequestedK } from '../../../lib/result';
+import { RESULT_CACHE } from '../../../lib/respond';
+import { staircase } from '../../../lib/staircase';
+
+const { terms: raw, k } = Astro.params;
+const terms = raw?.split(',').filter(Boolean) ?? [];
+if (terms.length === 0 || terms.length > 64 || !terms.every((t) => /^-?\d{1,40}$/.test(t))) {
+  return new Response(null, { status: 404 });
+}
+if (k !== undefined && parseRequestedK(k) === undefined)
+  return Astro.redirect(`/terms/${raw}`, 301);
+
+const index = await openIndex(env.PI);
+const rows = await staircase(index, terms);
+const model = await buildResult(index, rows, parseRequestedK(k));
+Astro.response.headers.set('Cache-Control', RESULT_CACHE);
+const hasNegative = terms.some((t) => t.startsWith('-'));
+---
+
+<Base
+  title={`${terms.join(', ')} in pi`}
+  description={`Where the terms ${terms.join(', ')} first appear in pi.`}
+>
+  <header class="sequence">
+    <h1><span class="digits">{terms.join(', ')}</span></h1>
+    {hasNegative && <p class="muted small">Minus signs are dropped before searching.</p>}
+  </header>
+  <Result
+    model={model}
+    base={`/terms/${raw}`}
+    nothingToSearch={`Nothing to search: the first term alone has more than ${index.manifest.maxQuery} digits.`}
+  />
+</Base>
