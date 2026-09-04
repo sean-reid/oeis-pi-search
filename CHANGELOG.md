@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/sean-reid/oeis-pi-search/compare/oeis-pi-search-v0.1.1...oeis-pi-search-v0.2.0) (2026-09-04)
+
+
+### Features
+
+* earliest by eight terms and a pi approximations leaderboard ([#19](https://github.com/sean-reid/oeis-pi-search/issues/19)) ([b740546](https://github.com/sean-reid/oeis-pi-search/commit/b740546f161ccf060eecf7fc1c327148bf3006ac))
+
+
+### Bug Fixes
+
+* leave decimal expansions out of the pi approximations ([#22](https://github.com/sean-reid/oeis-pi-search/issues/22)) ([76e2f18](https://github.com/sean-reid/oeis-pi-search/commit/76e2f1894750fbad7a5f278aca2578c8a0cccefb))
+* **web:** one underline under the matched digits ([#20](https://github.com/sean-reid/oeis-pi-search/issues/20)) ([64b235f](https://github.com/sean-reid/oeis-pi-search/commit/64b235fcc9acea4657953c1784a37eaea205425e))
+
 ## [0.1.1](https://github.com/sean-reid/oeis-pi-search/compare/oeis-pi-search-v0.1.0...oeis-pi-search-v0.1.1) (2026-09-04)
 
 
