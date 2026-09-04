@@ -48,10 +48,10 @@ export function ogHtml(model: OgModel): string {
     .join('');
   return `
   <div style="display:flex;flex-direction:column;width:1200px;height:630px;padding:64px 72px;background:#fdfdfb;color:#1a1a1a;font-family:'Newsreader';">
-    <div style="display:flex;font-family:'JetBrains Mono';font-size:26px;color:#5a5a5a;">${escape(model.eyebrow)}</div>
-    <div style="display:flex;font-size:44px;font-weight:500;line-height:1.15;margin-top:8px;">${escape(clampTitle(model.title))}</div>
-    <div style="display:flex;font-size:34px;margin-top:22px;">${escape(headline(model.rows, model.totalDigits, model.noun))}<span style="color:#b3261e;">.</span></div>
-    <div style="display:flex;flex-direction:column;margin-top:26px;border-top:1px solid #1a1a1a;">${rowsHtml}</div>
+    <div style="display:flex;flex-shrink:0;font-family:'JetBrains Mono';font-size:26px;color:#5a5a5a;">${escape(model.eyebrow)}</div>
+    <div style="display:flex;flex-shrink:0;font-size:44px;font-weight:500;line-height:1.15;margin-top:8px;">${escape(clampTitle(model.title))}</div>
+    <div style="display:flex;flex-shrink:0;font-size:34px;margin-top:22px;">${escape(headline(model.rows, model.totalDigits, model.noun))}<span style="color:#b3261e;">.</span></div>
+    <div style="display:flex;flex-direction:column;margin-top:26px;border-top:1px solid #1a1a1a;overflow:hidden;">${rowsHtml}</div>
     <div style="display:flex;margin-top:auto;font-size:22px;color:#5a5a5a;">oeis-pi-search.dwainosaur.com</div>
   </div>`.replace(/>\s+</g, '><');
 }
