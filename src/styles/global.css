@@ -1,0 +1,130 @@
+:root {
+  --paper: #fdfdfb;
+  --ink: #1a1a1a;
+  --ink-soft: #5a5a5a;
+  --rule: #d8d6cf;
+  --mark: #b3261e;
+  --font-text: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --font-digits: 'Commit Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --measure: 40rem;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151515;
+    --ink: #e6e4dd;
+    --ink-soft: #a09e97;
+    --rule: #3a3936;
+    --mark: #e5766c;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 112.5%;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+  margin-top: 3rem;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  color: var(--mark);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+
+.digits {
+  font-family: var(--font-digits);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 0.9375rem;
+}
+
+.site-header,
+.site-footer {
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-header nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.site-header a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.site-footer {
+  border-top: 1px solid var(--rule);
+}
+
+.site-footer p {
+  margin: 0.25rem 0;
+}

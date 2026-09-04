@@ -19,7 +19,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm test` runs unit tests, `pnpm e2e` runs Playwright, `pnpm build` produces the Worker bundle.
+`pnpm test` runs unit tests, `pnpm e2e` runs Playwright against a built bundle, `pnpm build` produces it.
 
 ## Data
 
