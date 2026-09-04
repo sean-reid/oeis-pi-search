@@ -1,0 +1,14 @@
+# OEIS Sequence Names (http://oeis.org/names.gz)
+A000001 Number of groups of order n.
+A000002 Kolakoski sequence: a(n) is length of n-th run; a(1) = 1; sequence consists just of 1's and 2's.
+A000040 The prime numbers.
+A000045 Fibonacci numbers: F(n) = F(n-1) + F(n-2) with F(0) = 0 and F(1) = 1.
+A000079 Powers of 2: a(n) = 2^n.
+A000108 Catalan numbers: C(n) = binomial(2n,n)/(n+1) = (2n)!/(n!(n+1)!).
+A000142 Factorial numbers: n! = 1*2*3*4*...*n (order of symmetric group S_n, number of permutations of n letters).
+A000217 Triangular numbers: a(n) = binomial(n+1,2) = n*(n+1)/2 = 0 + 1 + 2 + ... + n.
+A000290 The squares: a(n) = n^2.
+A000796 Decimal expansion of Pi (or digits of Pi).
+A001057 Canonical enumeration of integers: interleaved positive and negative integers with zero prepended.
+A005132 Recamán's sequence (or Recaman's sequence): a(0) = 0; for n > 0, a(n) = a(n-1) - n if nonnegative and not already in the sequence, otherwise a(n) = a(n-1) + n.
+A005150 Look and Say sequence: describe the previous term! (method A - initial term is 1).
