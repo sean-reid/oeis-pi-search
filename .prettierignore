@@ -8,3 +8,4 @@ test-results/
 CHANGELOG.md
 src/lib/index/fixtures/
 worker-configuration.d.ts
+.release-please-manifest.json
