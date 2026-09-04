@@ -306,24 +306,14 @@ hr {
 }
 
 .strip figcaption {
-  position: relative;
   padding-left: var(--offset);
-  padding-top: 0.25rem;
+  padding-top: 0.35rem;
   color: var(--mark);
   white-space: nowrap;
 }
 
 .strip figcaption span {
   font-size: 0.75rem;
-}
-
-.strip figcaption::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: var(--offset);
-  width: var(--width);
-  border-top: 1px solid var(--mark);
 }
 
 table.staircase {
