@@ -11,6 +11,8 @@
   "observability": {
     "enabled": true,
   },
+  "workers_dev": true,
+  "routes": [{ "pattern": "oeis-pi-search.dwainosaur.com", "custom_domain": true }],
   "d1_databases": [
     {
       "binding": "DB",
