@@ -422,7 +422,8 @@ table.staircase a {
   text-decoration: none;
   min-height: 44px;
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .examples a:hover .name {
