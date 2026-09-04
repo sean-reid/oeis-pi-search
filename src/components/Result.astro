@@ -48,9 +48,9 @@ const headlineNoun = termLabel === 'digits' ? 'digits' : 'terms';
       </p>
     ) : (
       <p class="headline">
-        Not found: even the first {headlineNoun === 'digits' ? 'digit' : 'term'} is missing from the
-        first {formatNumber(totalDigits)} digits, which cannot happen for a single digit, so this
-        string is longer than one digit and absent.
+        Not found: even the first {headlineNoun === 'digits' ? 'digit' : 'term'},{' '}
+        <span class="digits">{rows[0].digits}</span>, does not appear in the first{' '}
+        {formatNumber(totalDigits)} digits.
       </p>
     )
   }
