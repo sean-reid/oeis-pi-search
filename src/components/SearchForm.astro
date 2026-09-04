@@ -6,19 +6,122 @@ interface Props {
 const { value = '', autofocus = false } = Astro.props;
 ---
 
-<form class="search" action="/search" method="get" role="search">
+<form class="search" action="/search" method="get" role="search" data-search>
   <label class="visually-hidden" for="q">Sequence, A-number, terms, or digits</label>
-  <input
-    id="q"
-    name="q"
-    type="search"
-    value={value}
-    placeholder="A000045, Fibonacci, 1, 1, 2, 3, 5, or 31415"
-    autocomplete="off"
-    autocapitalize="off"
-    spellcheck="false"
-    autofocus={autofocus}
-    required
-  />
+  <div class="search-field">
+    <input
+      id="q"
+      name="q"
+      type="search"
+      value={value}
+      placeholder="A000045, Fibonacci, 1, 1, 2, 3, 5, or 31415"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      autofocus={autofocus}
+      role="combobox"
+      aria-autocomplete="list"
+      aria-expanded="false"
+      aria-controls="suggestions"
+      required
+    />
+    <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+  </div>
   <button type="submit">Find</button>
 </form>
+
+<script>
+  interface Suggestion {
+    label: string;
+    detail: string;
+    href: string;
+  }
+
+  for (const form of document.querySelectorAll<HTMLFormElement>('[data-search]')) {
+    const input = form.querySelector<HTMLInputElement>('input[name=q]');
+    const list = form.querySelector<HTMLUListElement>('.suggestions');
+    if (!input || !list) continue;
+    let items: Suggestion[] = [];
+    let active = -1;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let controller: AbortController | undefined;
+
+    const close = () => {
+      list.hidden = true;
+      list.innerHTML = '';
+      items = [];
+      active = -1;
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+    };
+
+    const render = () => {
+      list.innerHTML = '';
+      items.forEach((item, i) => {
+        const li = document.createElement('li');
+        li.id = `suggestion-${i}`;
+        li.setAttribute('role', 'option');
+        li.setAttribute('aria-selected', String(i === active));
+        const a = document.createElement('a');
+        a.href = item.href;
+        a.tabIndex = -1;
+        const label = document.createElement('span');
+        label.className = 'digits';
+        label.textContent = item.label;
+        const detail = document.createElement('span');
+        detail.className = 'detail';
+        detail.textContent = item.detail;
+        a.appendChild(label);
+        a.appendChild(detail);
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+      list.hidden = items.length === 0;
+      input.setAttribute('aria-expanded', String(items.length > 0));
+      if (active >= 0) input.setAttribute('aria-activedescendant', `suggestion-${active}`);
+      else input.removeAttribute('aria-activedescendant');
+    };
+
+    const fetchSuggestions = async () => {
+      const q = input.value.trim();
+      if (q === '') return close();
+      controller?.abort();
+      controller = new AbortController();
+      try {
+        const res = await fetch(`/suggest?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) return close();
+        items = (await res.json()) as Suggestion[];
+        active = -1;
+        render();
+      } catch {
+        // Aborted or offline: the form still submits normally.
+      }
+    };
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(fetchSuggestions, 120);
+    });
+
+    input.addEventListener('keydown', (ev) => {
+      if (list.hidden) return;
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        const delta = ev.key === 'ArrowDown' ? 1 : -1;
+        active = (active + delta + items.length + 1) % (items.length + 1);
+        if (active === items.length) active = -1;
+        render();
+      } else if (ev.key === 'Enter' && active >= 0) {
+        ev.preventDefault();
+        location.assign(items[active].href);
+      } else if (ev.key === 'Escape') {
+        close();
+      }
+    });
+
+    input.addEventListener('blur', () => setTimeout(close, 150));
+    form.addEventListener('submit', () => controller?.abort());
+  }
+</script>
