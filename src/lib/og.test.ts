@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { headline, ogHtml } from './og-html';
+import { clampTitle, headline, ogHtml } from './og-html';
 
 const rows = [
   { k: 1, digits: '0', first: 32, count: 1954 },
@@ -12,6 +12,17 @@ describe('og', () => {
     expect(headline(rows, 20000)).toBe('The first 2 terms appear at position 167');
     expect(headline([rows[2]], 20000)).toBe('Not in the first 20,000 digits of pi');
     expect(headline([rows[0]], 20000)).toBe('The first term appears at position 32');
+    expect(headline(rows, 20000, 'digits')).toBe('The first 2 digits appear at position 167');
+  });
+
+  it('clamps long titles at a word boundary', () => {
+    expect(clampTitle('short')).toBe('short');
+    const long =
+      'Fibonacci numbers: F(n) = F(n-1) + F(n-2) with F(0) = 0 and F(1) = 1, and more words here';
+    const out = clampTitle(long);
+    expect(out.length).toBeLessThanOrEqual(73);
+    expect(out.endsWith('…')).toBe(true);
+    expect(out).not.toMatch(/[\s,]…$/);
   });
 
   it('escapes the title and lists rows', () => {

@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   }
   const rows = await staircase(index, Array.from(digits));
   return ogImage(
-    { eyebrow: 'digits', title: digits, rows, totalDigits: index.manifest.digits },
+    { eyebrow: 'digits', title: digits, rows, totalDigits: index.manifest.digits, noun: 'digits' },
     env.ASSETS,
     url.origin,
   );
