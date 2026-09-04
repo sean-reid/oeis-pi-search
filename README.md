@@ -23,4 +23,15 @@ pnpm dev
 
 ## Data
 
+The digits and the index live in R2 and are built once with the Rust tools under `tools/`:
+
+```
+cd tools && cargo build --release
+./target/release/pisearch pack pi-billion.txt out/      # packs the digits after the decimal point
+./target/release/pisearch build out/                     # writes the lookup tables and buckets
+./target/release/pisearch lookup out/ 31415 112358       # positions print one-based
+```
+
+`pack` accepts any text file of pi with or without the leading `3.`. The billion digit source was the MIT SIPB mirror, spot checked against pi.delivery. The layout is documented in `tools/src/format.rs` and read by `src/lib/index/reader.ts`; both are tested against the fixture in `src/lib/index/fixtures`.
+
 Sequence data comes from the [OEIS](https://oeis.org) under CC BY-SA 4.0. This site is not affiliated with the OEIS Foundation.
