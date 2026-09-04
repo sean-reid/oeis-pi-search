@@ -13,7 +13,7 @@ use std::path::Path;
 
 /// Terms kept for display; the staircase never needs more than max_query of them.
 pub const DISPLAY_TERMS: usize = 30;
-const ROWS_PER_INSERT: usize = 200;
+const ROWS_PER_INSERT: usize = 40;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Row {
