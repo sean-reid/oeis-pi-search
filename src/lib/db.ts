@@ -148,3 +148,22 @@ export async function randomAnumber(db: D1Database): Promise<string | null> {
     .first<{ anumber: string }>();
   return row?.anumber ?? null;
 }
+
+export interface PiApproximation {
+  anumber: string;
+  name: string;
+  expr: string;
+  value: number;
+  digits: number;
+}
+
+/** Sequences whose leading terms, read as one number, approximate pi under a simple expression. */
+export async function piApproximations(db: D1Database, limit = 25): Promise<PiApproximation[]> {
+  const { results } = await db
+    .prepare(
+      'SELECT anumber, name, pi_expr AS expr, pi_value AS value, pi_digits AS digits FROM sequences WHERE pi_digits IS NOT NULL ORDER BY pi_digits DESC, rows ASC, anumber ASC LIMIT ?',
+    )
+    .bind(limit)
+    .all<PiApproximation>();
+  return results;
+}

@@ -33,13 +33,15 @@ test('typeahead describes what a digit string will do', async ({ page }) => {
   await expect(page).toHaveURL(/\/digits\/31415$/);
 });
 
-test('browse shows the examples and three leaderboards', async ({ page }) => {
+test('browse shows the examples and four leaderboards', async ({ page }) => {
   await page.goto('/browse');
   await expect(page.getByRole('heading', { name: 'Deepest' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Earliest' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Rarest' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pi approximations' })).toBeVisible();
   const tables = page.locator('table.leaders');
-  await expect(tables).toHaveCount(3);
+  await expect(tables).toHaveCount(4);
+  await expect(tables.nth(3).locator('tbody tr').first()).toContainText(/\d\.\d{6}/);
   await expect(tables.nth(0).locator('tbody tr').first()).toContainText('A000045');
   await expect(page.getByText('OEIS snapshot 2026-09-04')).toBeVisible();
 });
