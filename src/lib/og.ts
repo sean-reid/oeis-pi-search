@@ -1,5 +1,5 @@
 import { ImageResponse } from 'workers-og';
-import { ogHtml, type OgModel } from './og-html';
+import { ogTree, type OgModel } from './og-html';
 
 type Font = { name: string; data: ArrayBuffer; weight: 400 | 500; style: 'normal' };
 
@@ -30,11 +30,14 @@ export function loadFonts(assets: Fetcher, origin: string): Promise<Font[]> {
 export type { OgModel } from './og-html';
 
 export async function ogImage(model: OgModel, assets: Fetcher, origin: string): Promise<Response> {
-  const res = new ImageResponse(ogHtml(model), {
-    width: 1200,
-    height: 630,
-    fonts: await loadFonts(assets, origin),
-  });
+  const res = new ImageResponse(
+    ogTree(model) as unknown as ConstructorParameters<typeof ImageResponse>[0],
+    {
+      width: 1200,
+      height: 630,
+      fonts: await loadFonts(assets, origin),
+    },
+  );
   res.headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800');
   return res;
 }

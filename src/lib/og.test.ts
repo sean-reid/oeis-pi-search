@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { clampTitle, headline, ogHtml } from './og-html';
+import { clampTitle, headline, ogTree, type OgElement } from './og-html';
+
+function text(node: OgElement | string): string {
+  if (typeof node === 'string') return node;
+  const c = node.props.children;
+  return typeof c === 'string' ? c : (c ?? []).map(text).join(' ');
+}
 
 const rows = [
   { k: 1, digits: '0', first: 32, count: 1954 },
@@ -25,10 +31,12 @@ describe('og', () => {
     expect(out).not.toMatch(/[\s,]…$/);
   });
 
-  it('escapes the title and lists rows', () => {
-    const html = ogHtml({ eyebrow: 'A000045', title: 'a < b & "c"', rows, totalDigits: 20000 });
-    expect(html).toContain('a &lt; b &amp; &quot;c&quot;');
-    expect(html).toContain('not found');
-    expect(html).toContain('>167<');
+  it('keeps titles verbatim and lists rows', () => {
+    const flat = text(
+      ogTree({ eyebrow: 'A000045', title: 'a < b & "c"', rows, totalDigits: 20000 }),
+    );
+    expect(flat).toContain('a < b & "c"');
+    expect(flat).toContain('not found');
+    expect(flat).toContain('167');
   });
 });
