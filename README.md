@@ -24,6 +24,12 @@ pnpm dev
 
 Routes: `/A000045` for a sequence, `/digits/31415` for a digit string, `/terms/1,1,2,3` for terms, each with an optional `/N` to select a row of the staircase. `/search?q=` resolves any of those from the search box or searches names.
 
+## Deploying
+
+Pushes to `main` build and deploy through `.github/workflows/deploy.yml` with two repository secrets, `CLOUDFLARE_API_TOKEN` (Workers Scripts, Workers Routes, D1, R2, and DNS edit on the zone) and `CLOUDFLARE_ACCOUNT_ID`. The Worker serves `oeis-pi-search.dwainosaur.com` as a custom domain and its `workers.dev` subdomain. Set the repository variable `CF_BEACON_TOKEN` to a Cloudflare Web Analytics token to enable the beacon; without it no analytics script is emitted.
+
+`refresh-oeis.yml` runs on the first of each month: it downloads the current OEIS dumps and the index from R2, recomputes every staircase, and replaces the D1 tables in one transaction. It can also be started by hand from the Actions tab.
+
 ## Data
 
 The digits and the index live in R2 and are built once with the Rust tools under `tools/`:
