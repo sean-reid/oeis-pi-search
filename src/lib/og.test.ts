@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import { clampTitle, headline, ogTree, type OgElement } from './og-html';
+
+function text(node: OgElement | string): string {
+  if (typeof node === 'string') return node;
+  const c = node.props.children;
+  return typeof c === 'string' ? c : (c ?? []).map(text).join(' ');
+}
+
+const rows = [
+  { k: 1, digits: '0', first: 32, count: 1954 },
+  { k: 2, digits: '01', first: 167, count: 217 },
+  { k: 3, digits: '011', first: null, count: 0 },
+];
+
+describe('og', () => {
+  it('writes the headline for the deepest found row', () => {
+    expect(headline(rows, 20000)).toBe('The first 2 terms appear at position 167');
+    expect(headline([rows[2]], 20000)).toBe('Not in the first 20,000 digits of pi');
+    expect(headline([rows[0]], 20000)).toBe('The first term appears at position 32');
+    expect(headline(rows, 20000, 'digits')).toBe('The first 2 digits appear at position 167');
+  });
+
+  it('clamps long titles at a word boundary', () => {
+    expect(clampTitle('short')).toBe('short');
+    const long =
+      'Fibonacci numbers: F(n) = F(n-1) + F(n-2) with F(0) = 0 and F(1) = 1, and more words here';
+    const out = clampTitle(long);
+    expect(out.length).toBeLessThanOrEqual(73);
+    expect(out.endsWith('…')).toBe(true);
+    expect(out).not.toMatch(/[\s,]…$/);
+  });
+
+  it('keeps titles verbatim and lists rows', () => {
+    const flat = text(
+      ogTree({ eyebrow: 'A000045', title: 'a < b & "c"', rows, totalDigits: 20000 }),
+    );
+    expect(flat).toContain('a < b & "c"');
+    expect(flat).toContain('not found');
+    expect(flat).toContain('167');
+  });
+});

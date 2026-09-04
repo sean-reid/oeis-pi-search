@@ -21,7 +21,11 @@ const model = tooLong
   : await buildResult(index, await staircase(index, Array.from(digits)), parseRequestedK(k));
 ---
 
-<Base title={`${digits} in pi`} description={`Where the digits ${digits} first appear in pi.`}>
+<Base
+  title={`${digits} in pi`}
+  description={`Where the digits ${digits} first appear in pi.`}
+  image={model ? `/og/digits/${digits}.png` : undefined}
+>
   <header class="sequence">
     <h1><span class="digits">{digits}</span></h1>
     <p class="muted small">Each row adds one more digit of the string.</p>
