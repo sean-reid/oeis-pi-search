@@ -18,6 +18,7 @@ const get = (name) =>
       'object',
       'get',
       `oeis-pi-search/index/v1/${name}`,
+      '--remote',
       '--file',
       join(dir, name),
     ],
