@@ -11,8 +11,10 @@ test('home lists the examples with inline answers', async ({ page }) => {
 test('typeahead lists sequence names and opens one from the keyboard', async ({ page }) => {
   await page.goto('/');
   const box = page.getByRole('combobox', { name: /sequence/i });
-  await box.fill('kolak');
+  await box.fill('numbers');
   const options = page.getByRole('option');
+  await expect(options.first()).toContainText('A000040');
+  await box.fill('kolak');
   await expect(options).toHaveCount(1);
   await expect(options.first()).toContainText('A000002');
   await box.press('ArrowDown');

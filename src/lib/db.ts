@@ -52,13 +52,12 @@ export function ftsQuery(text: string): string | null {
   return words.map((w) => `"${w}"*`).join(' ');
 }
 
+/** Lowest A-numbers first: the classic sequences were catalogued first, so this beats relevance. */
 export async function searchNames(db: D1Database, text: string, limit = 10): Promise<NameMatch[]> {
   const q = ftsQuery(text);
   if (!q) return [];
   const { results } = await db
-    .prepare(
-      'SELECT anumber, name FROM names_fts WHERE names_fts MATCH ? ORDER BY rank, anumber LIMIT ?',
-    )
+    .prepare('SELECT anumber, name FROM names_fts WHERE names_fts MATCH ? ORDER BY anumber LIMIT ?')
     .bind(q, limit)
     .all<NameMatch>();
   return results;
