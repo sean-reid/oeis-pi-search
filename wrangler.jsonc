@@ -15,9 +15,14 @@
   "routes": [{ "pattern": "oeis-pi-search.dwainosaur.com", "custom_domain": true }],
   "d1_databases": [
     {
-      "binding": "DB",
+      "binding": "DB_A",
       "database_name": "oeis-pi-search",
       "database_id": "ae45f641-830c-42fe-8898-2319ac03f503",
+    },
+    {
+      "binding": "DB_B",
+      "database_name": "oeis-pi-search-b",
+      "database_id": "be7b054f-3ebf-4323-afd4-eb842af5bc7b",
     },
   ],
   "r2_buckets": [
