@@ -9,14 +9,16 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "check": "astro check",
+    "check": "wrangler types && astro check",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "test": "vitest run",
     "e2e": "playwright test",
     "deploy": "astro build && wrangler deploy --config dist/server/wrangler.json",
-    "serve": "wrangler dev --config dist/server/wrangler.json --port 4321"
+    "serve": "wrangler dev --config dist/server/wrangler.json --port 4321 --persist-to .wrangler/state",
+    "types": "wrangler types",
+    "seed": "node scripts/seed-local.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.0",

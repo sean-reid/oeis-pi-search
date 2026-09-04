@@ -9,3 +9,4 @@ target/
 .DS_Store
 .env
 .dev.vars
+worker-configuration.d.ts

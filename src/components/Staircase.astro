@@ -1,0 +1,48 @@
+---
+import { formatNumber } from '../lib/format';
+import type { StairRow } from '../lib/staircase';
+
+interface Props {
+  rows: StairRow[];
+  selected: StairRow | undefined;
+  base: string;
+  totalDigits: number;
+  termLabel?: string;
+}
+const { rows, selected, base, totalDigits, termLabel = 'terms' } = Astro.props;
+---
+
+<table class="staircase" data-staircase>
+  <thead>
+    <tr>
+      <th scope="col">{termLabel}</th>
+      <th scope="col">string</th>
+      <th scope="col" class="num">first position</th>
+      <th scope="col" class="num">occurrences</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((r) => (
+        <tr
+          data-k={r.k}
+          data-found={r.first !== null ? '' : undefined}
+          aria-current={selected?.k === r.k ? 'true' : undefined}
+        >
+          <td class="num">{r.k}</td>
+          <td class="digits">{r.digits}</td>
+          <td class="num">
+            {r.first !== null ? (
+              <a href={`${base}/${r.k}`} data-k={r.k}>
+                {formatNumber(r.first)}
+              </a>
+            ) : (
+              <span class="muted">not within {formatNumber(totalDigits)}</span>
+            )}
+          </td>
+          <td class="num">{formatNumber(r.count)}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

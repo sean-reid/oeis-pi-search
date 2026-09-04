@@ -7,4 +7,10 @@ export default defineConfig({
   output: 'server',
   adapter: cloudflare({ imageService: 'compile' }),
   session: false,
+  vite: {
+    define: {
+      // Edge cache entries are keyed by build so a deploy never serves HTML that points at retired asset hashes.
+      __BUILD_ID__: JSON.stringify(Date.now().toString(36)),
+    },
+  },
 });

@@ -39,6 +39,16 @@ enum Cmd {
         start: u64,
         len: usize,
     },
+    /// Compute every sequence's staircase and write SQL for D1.
+    Oeis {
+        stripped: PathBuf,
+        names: PathBuf,
+        index_dir: PathBuf,
+        out: PathBuf,
+        /// Snapshot label stored in the meta table, e.g. 2026-09-04.
+        #[arg(long)]
+        snapshot: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -87,6 +97,16 @@ fn main() -> Result<()> {
                 "{}",
                 d.iter().map(|d| (b'0' + d) as char).collect::<String>()
             );
+        }
+        Cmd::Oeis {
+            stripped,
+            names,
+            index_dir,
+            out,
+            snapshot,
+        } => {
+            let summary = pisearch::oeis::run(&stripped, &names, &index_dir, &out, &snapshot)?;
+            println!("{}", summary.sequences);
         }
     }
     Ok(())

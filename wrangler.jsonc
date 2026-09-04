@@ -11,4 +11,23 @@
   "observability": {
     "enabled": true,
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oeis-pi-search",
+      "database_id": "ae45f641-830c-42fe-8898-2319ac03f503",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PI",
+      "bucket_name": "oeis-pi-search",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "383d10f676c14d119af298763440044c",
+    },
+  ],
 }

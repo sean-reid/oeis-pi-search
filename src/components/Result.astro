@@ -1,0 +1,110 @@
+---
+import { formatNumber, pluralTerms } from '../lib/format';
+import type { ResultModel } from '../lib/result';
+import DigitStrip from './DigitStrip.astro';
+import Staircase from './Staircase.astro';
+
+interface Props {
+  model: ResultModel;
+  base: string;
+  termLabel?: string;
+  nothingToSearch?: string;
+}
+const { model, base, termLabel, nothingToSearch } = Astro.props;
+const { rows, strips, selected, totalDigits, maxQuery } = model;
+const headlineNoun = termLabel === 'digits' ? 'digits' : 'terms';
+---
+
+<section class="result" data-result data-base={base}>
+  {
+    rows.length === 0 ? (
+      <p class="headline">
+        {nothingToSearch ??
+          `Nothing to search: the first term alone has more than ${maxQuery} digits.`}
+      </p>
+    ) : selected ? (
+      <p class="headline" data-headline>
+        {headlineNoun === 'digits' ? (
+          <>
+            <span data-count>
+              {selected.k === rows.length && rows.length > 1 ? 'All' : 'The first'} {selected.k}{' '}
+              digits
+            </span>{' '}
+            appear at position{' '}
+            <strong class="digits" data-position>
+              {formatNumber(selected.first as number)}
+            </strong>
+            .
+          </>
+        ) : (
+          <>
+            <span data-count>{pluralTerms(selected.k).replace(/^t/, 'T')}</span> appear at position{' '}
+            <strong class="digits" data-position>
+              {formatNumber(selected.first as number)}
+            </strong>
+            .
+          </>
+        )}
+      </p>
+    ) : (
+      <p class="headline">
+        Not found: even the first {headlineNoun === 'digits' ? 'digit' : 'term'},{' '}
+        <span class="digits">{rows[0].digits}</span>, does not appear in the first{' '}
+        {formatNumber(totalDigits)} digits.
+      </p>
+    )
+  }
+  {strips.map((s) => <DigitStrip strip={s} hidden={s.k !== selected?.k} />)}
+  {
+    rows.length > 0 && (
+      <Staircase
+        rows={rows}
+        selected={selected}
+        base={base}
+        totalDigits={totalDigits}
+        termLabel={termLabel}
+      />
+    )
+  }
+  <p class="muted small">
+    Searched the first {formatNumber(totalDigits)} digits. Strings longer than {maxQuery} digits are not
+    indexed.
+  </p>
+</section>
+
+<script>
+  // Progressive enhancement: clicking a found row swaps the strip and headline without a round trip.
+  for (const result of document.querySelectorAll<HTMLElement>('[data-result]')) {
+    const base = result.dataset.base ?? '';
+    const strips = new Map<string, HTMLElement>();
+    for (const s of result.querySelectorAll<HTMLElement>('[data-strip]'))
+      strips.set(s.dataset.strip ?? '', s);
+    const headline = result.querySelector<HTMLElement>('[data-headline]');
+    result.querySelector('[data-staircase]')?.addEventListener('click', (ev) => {
+      const link = (ev.target as HTMLElement).closest<HTMLAnchorElement>('a[data-k]');
+      if (!link) return;
+      const k = link.dataset.k ?? '';
+      const strip = strips.get(k);
+      if (!strip || !headline) return;
+      ev.preventDefault();
+      for (const [key, el] of strips) el.hidden = key !== k;
+      for (const tr of result.querySelectorAll('tr[data-k]')) {
+        if (tr.getAttribute('data-k') === k) tr.setAttribute('aria-current', 'true');
+        else tr.removeAttribute('aria-current');
+      }
+      const count = headline.querySelector('[data-count]');
+      const position = headline.querySelector('[data-position]');
+      if (count) count.textContent = count.textContent?.replace(/\d+/, k) ?? '';
+      if (position) position.textContent = link.textContent ?? '';
+      history.replaceState(null, '', `${base}/${k}`);
+      centerMatch(strip);
+    });
+    for (const s of strips.values()) if (!s.hidden) centerMatch(s);
+  }
+
+  function centerMatch(strip: HTMLElement) {
+    const mark = strip.querySelector<HTMLElement>('mark');
+    if (!mark) return;
+    strip.scrollLeft = mark.offsetLeft - (strip.clientWidth - mark.offsetWidth) / 2;
+  }
+</script>

@@ -16,10 +16,13 @@ Live at https://oeis-pi-search.dwainosaur.com
 
 ```
 pnpm install
+pnpm seed
 pnpm dev
 ```
 
-`pnpm test` runs unit tests, `pnpm e2e` runs Playwright against a built bundle, `pnpm build` produces it.
+`pnpm seed` loads a small fixture (the first 20,000 digits of pi and thirteen sequences) into wrangler's local D1 and R2 state so every page works offline. `pnpm test` runs unit tests, `pnpm e2e` runs Playwright against a built bundle, `pnpm build` produces it.
+
+Routes: `/A000045` for a sequence, `/digits/31415` for a digit string, `/terms/1,1,2,3` for terms, each with an optional `/N` to select a row of the staircase. `/search?q=` resolves any of those from the search box or searches names.
 
 ## Data
 
@@ -30,7 +33,10 @@ cd tools && cargo build --release
 ./target/release/pisearch pack pi-billion.txt out/      # packs the digits after the decimal point
 ./target/release/pisearch build out/                     # writes the lookup tables and buckets
 ./target/release/pisearch lookup out/ 31415 112358       # positions print one-based
+./target/release/pisearch oeis stripped.gz names.gz out/ sequences.sql --snapshot 2026-09-04
 ```
+
+`oeis` reads the OEIS `stripped` and `names` dumps, computes every sequence's staircase against the index, and writes SQL that `wrangler d1 execute oeis-pi-search --remote --file sequences.sql` loads into D1. The index files upload with `wrangler r2 object put` under `index/v1/`.
 
 `pack` accepts any text file of pi with or without the leading `3.`. The billion digit source was the MIT SIPB mirror, spot checked against pi.delivery. The layout is documented in `tools/src/format.rs` and read by `src/lib/index/reader.ts`; both are tested against the fixture in `src/lib/index/fixtures`.
 
