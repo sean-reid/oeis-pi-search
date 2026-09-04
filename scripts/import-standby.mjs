@@ -11,6 +11,7 @@ if (!file) throw new Error('usage: import-standby.mjs <sequences.sql>');
 const DATABASES = { a: 'oeis-pi-search', b: 'oeis-pi-search-b' };
 const KV_ID = '383d10f676c14d119af298763440044c';
 const STATEMENTS_PER_CHUNK = 1000;
+const ATTEMPTS = 3;
 
 const wrangler = (args, opts = {}) =>
   execFileSync('pnpm', ['exec', 'wrangler', ...args], {
@@ -56,6 +57,20 @@ function chunk(sql) {
   return chunks;
 }
 
+// Each import is one transaction, so a chunk that fails part way leaves nothing behind and can be rerun.
+function importWithRetry(target, path) {
+  let lastError;
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    try {
+      return wrangler(['d1', 'execute', target, '--remote', '--yes', '--file', path]);
+    } catch (err) {
+      lastError = err;
+      console.log(`attempt ${attempt} failed: ${String(err.message ?? err).split('\n')[0]}`);
+    }
+  }
+  throw lastError;
+}
+
 const live = liveSlot();
 const standby = live === 'a' ? 'b' : 'a';
 const target = DATABASES[standby];
@@ -67,7 +82,7 @@ chunks.forEach((c, i) => {
   const path = join(dir, `${String(i).padStart(3, '0')}.sql`);
   writeFileSync(path, c);
   const started = Date.now();
-  const out = wrangler(['d1', 'execute', target, '--remote', '--yes', '--file', path]);
+  const out = importWithRetry(target, path);
   const rows = /"rows_written": (\d+)/.exec(out)?.[1] ?? '?';
   console.log(
     `chunk ${i + 1}/${chunks.length}: ${rows} rows in ${Math.round((Date.now() - started) / 1000)}s`,
