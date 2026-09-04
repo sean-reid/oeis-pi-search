@@ -1,10 +1,12 @@
 ---
-import { env } from 'cloudflare:workers';
+import { liveDb } from '../lib/live-db';
 import SearchForm from '../components/SearchForm.astro';
 import Base from '../layouts/Base.astro';
 import { searchNames } from '../lib/db';
 import { parseInput } from '../lib/parse-input';
 import { SEARCH_CACHE } from '../lib/respond';
+
+const db = await liveDb();
 
 const q = Astro.url.searchParams.get('q') ?? '';
 const parsed = parseInput(q);
@@ -18,7 +20,7 @@ switch (parsed.kind) {
   case 'terms':
     return Astro.redirect(`/terms/${parsed.terms.join(',')}`, 302);
 }
-const matches = await searchNames(env.DB, parsed.query, 25);
+const matches = await searchNames(db, parsed.query, 25);
 Astro.response.headers.set('Cache-Control', SEARCH_CACHE);
 ---
 

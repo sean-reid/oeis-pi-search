@@ -1,17 +1,19 @@
 ---
-import { env } from 'cloudflare:workers';
+import { liveDb } from '../lib/live-db';
 import Base from '../layouts/Base.astro';
 import { deepest, earliest, examples, getMeta, rarest, type LeaderRow } from '../lib/db';
 import { EXAMPLES, SHORT_NAMES } from '../lib/examples';
 import { formatNumber } from '../lib/format';
 import { RESULT_CACHE } from '../lib/respond';
 
+const db = await liveDb();
+
 const [picked, deep, early, rare, meta] = await Promise.all([
-  examples(env.DB, EXAMPLES),
-  deepest(env.DB),
-  earliest(env.DB),
-  rarest(env.DB),
-  getMeta(env.DB),
+  examples(db, EXAMPLES),
+  deepest(db),
+  earliest(db),
+  rarest(db),
+  getMeta(db),
 ]);
 Astro.response.headers.set('Cache-Control', RESULT_CACHE);
 const total = formatNumber(Number(meta.digits ?? 0));

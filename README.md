@@ -28,7 +28,7 @@ Routes: `/A000045` for a sequence, `/digits/31415` for a digit string, `/terms/1
 
 Pushes to `main` build and deploy through `.github/workflows/deploy.yml` with two repository secrets, `CLOUDFLARE_API_TOKEN` (Workers Scripts, Workers Routes, D1, R2, and DNS edit on the zone) and `CLOUDFLARE_ACCOUNT_ID`. The Worker serves `oeis-pi-search.dwainosaur.com` as a custom domain and its `workers.dev` subdomain. Set the repository variable `CF_BEACON_TOKEN` to a Cloudflare Web Analytics token to enable the beacon; without it no analytics script is emitted.
 
-`refresh-oeis.yml` runs on the first of each month: it downloads the current OEIS dumps and the index from R2, recomputes every staircase, and replaces the D1 tables in one transaction. It can also be started by hand from the Actions tab.
+`refresh-oeis.yml` runs on the first of each month: it downloads the current OEIS dumps and the index from R2, recomputes every staircase, loads the result into whichever of the two D1 databases is not serving traffic, and flips the `live-db` key in KV to point at it. D1 blocks every query on a database while it imports, so the live one is never touched. It can also be started by hand from the Actions tab.
 
 ## Data
 
@@ -42,7 +42,7 @@ cd tools && cargo build --release
 ./target/release/pisearch oeis stripped.gz names.gz out/ sequences.sql --snapshot 2026-09-04
 ```
 
-`oeis` reads the OEIS `stripped` and `names` dumps, computes every sequence's staircase against the index, and writes SQL that `wrangler d1 execute oeis-pi-search --remote --file sequences.sql` loads into D1. The index files upload with `wrangler r2 object put` under `index/v1/`.
+`oeis` reads the OEIS `stripped` and `names` dumps, computes every sequence's staircase against the index, and writes SQL that `node scripts/import-standby.mjs sequences.sql` loads into the standby D1 database before switching traffic to it. The index files upload with `wrangler r2 object put` under `index/v1/`.
 
 `pack` accepts any text file of pi with or without the leading `3.`. The billion digit source was the MIT SIPB mirror, spot checked against pi.delivery. The layout is documented in `tools/src/format.rs` and read by `src/lib/index/reader.ts`; both are tested against the fixture in `src/lib/index/fixtures`.
 

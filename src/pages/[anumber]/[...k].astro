@@ -1,5 +1,6 @@
 ---
 import { env } from 'cloudflare:workers';
+import { liveDb } from '../../lib/live-db';
 import Result from '../../components/Result.astro';
 import Base from '../../layouts/Base.astro';
 import { getSequence } from '../../lib/db';
@@ -7,6 +8,8 @@ import { ANUMBER, canonicalAnumber } from '../../lib/format';
 import { openIndex } from '../../lib/index/r2-source';
 import { buildResult, parseRequestedK } from '../../lib/result';
 import { RESULT_CACHE } from '../../lib/respond';
+
+const db = await liveDb();
 
 const { anumber, k } = Astro.params;
 if (!anumber || !ANUMBER.test(anumber)) {
@@ -16,7 +19,7 @@ if (!anumber || !ANUMBER.test(anumber)) {
 }
 if (k !== undefined && parseRequestedK(k) === undefined) return Astro.redirect(`/${anumber}`, 301);
 
-const record = await getSequence(env.DB, anumber);
+const record = await getSequence(db, anumber);
 if (!record) {
   Astro.response.status = 404;
 }
