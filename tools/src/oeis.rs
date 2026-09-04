@@ -3,8 +3,10 @@
 
 use crate::format::parse_digits;
 use crate::lookup::Index;
+use crate::piapprox;
 use anyhow::{bail, Context, Result};
 use flate2::read::MultiGzDecoder;
+use rayon::prelude::*;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs::File;
@@ -120,6 +122,12 @@ pub fn parse_stripped(
     Ok(out)
 }
 
+/// Sequences defined in terms of pi would make trivial approximations.
+pub fn mentions_pi(name: &str) -> bool {
+    name.split(|c: char| !c.is_alphanumeric())
+        .any(|w| w.eq_ignore_ascii_case("pi"))
+}
+
 pub const SCHEMA: &str = "\
 DROP TABLE IF EXISTS sequences;
 DROP TABLE IF EXISTS names_fts;
@@ -135,12 +143,17 @@ CREATE TABLE sequences (
   depth_first INTEGER,
   first3 INTEGER,
   digits3 INTEGER,
-  first5 INTEGER,
-  has_negative INTEGER NOT NULL
+  first8 INTEGER,
+  has_negative INTEGER NOT NULL,
+  pi_digits REAL,
+  pi_expr TEXT,
+  pi_value REAL,
+  pi_score REAL
 );
 CREATE INDEX sequences_deepest ON sequences (depth DESC, depth_digits DESC, depth_first ASC);
-CREATE INDEX sequences_earliest ON sequences (first5 ASC) WHERE first5 IS NOT NULL;
+CREATE INDEX sequences_earliest ON sequences (first8 ASC) WHERE first8 IS NOT NULL;
 CREATE INDEX sequences_rarest ON sequences (digits3 ASC) WHERE first3 IS NULL AND digits3 IS NOT NULL;
+CREATE INDEX sequences_pi ON sequences (pi_score DESC) WHERE pi_score IS NOT NULL;
 CREATE VIRTUAL TABLE names_fts USING fts5(anumber UNINDEXED, name, tokenize='unicode61');
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 ";
@@ -180,7 +193,7 @@ pub fn write_sql(
         }
         writeln!(
             out,
-            "INSERT INTO sequences (anumber, name, terms, staircase, rows, depth, depth_digits, depth_first, first3, digits3, first5, has_negative) VALUES"
+            "INSERT INTO sequences (anumber, name, terms, staircase, rows, depth, depth_digits, depth_first, first3, digits3, first8, has_negative, pi_digits, pi_expr, pi_value, pi_score) VALUES"
         )?;
         let values: Vec<&str> = buf.iter().map(|(v, _)| v.as_str()).collect();
         writeln!(out, "{};", values.join(",\n"))?;
@@ -190,7 +203,17 @@ pub fn write_sql(
         buf.clear();
         Ok(())
     };
-    for seq in sequences {
+    let approximations: Vec<Option<piapprox::Approximation>> = sequences
+        .par_iter()
+        .map(|seq| {
+            if mentions_pi(&seq.name) {
+                None
+            } else {
+                piapprox::best(&prefixes(&seq.terms, index.manifest.max_query))
+            }
+        })
+        .collect();
+    for (seq, approx) in sequences.iter().zip(&approximations) {
         let rows = staircase(index, &seq.terms)?;
         let found: Vec<&Row> = rows.iter().filter(|r| r.first.is_some()).collect();
         let deepest = found.last();
@@ -202,7 +225,7 @@ pub fn write_sql(
             .map(String::as_str)
             .collect();
         let value = format!(
-            "({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})",
+            "({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})",
             sql_str(&seq.anumber),
             sql_str(&seq.name),
             sql_str(&terms.join(",")),
@@ -213,8 +236,20 @@ pub fn write_sql(
             sql_opt(deepest.and_then(|r| r.first)),
             sql_opt(row_at(3).and_then(|r| r.first)),
             sql_opt(row_at(3).map(|r| r.digits.len() as u64)),
-            sql_opt(row_at(5).and_then(|r| r.first)),
+            sql_opt(row_at(8).and_then(|r| r.first)),
             u8::from(seq.terms.iter().any(|t| t.starts_with('-'))),
+            approx
+                .as_ref()
+                .map_or("NULL".to_string(), |a| format!("{:.2}", a.digits)),
+            approx
+                .as_ref()
+                .map_or("NULL".to_string(), |a| sql_str(&piapprox::render(a))),
+            approx
+                .as_ref()
+                .map_or("NULL".to_string(), |a| format!("{:.10}", a.value)),
+            approx
+                .as_ref()
+                .map_or("NULL".to_string(), |a| format!("{:.2}", a.score())),
         );
         let name = format!("({}, {})", sql_str(&seq.anumber), sql_str(&seq.name));
         buffered.push((value, name));
@@ -289,6 +324,14 @@ mod tests {
         assert_eq!(seqs.len(), 2);
         assert_eq!(seqs[0].terms, s(&["0", "1", "1", "1", "2"]));
         assert_eq!(seqs[1].name, "Kolakoski's");
+    }
+
+    #[test]
+    fn detects_pi_in_names() {
+        assert!(mentions_pi("Decimal expansion of Pi."));
+        assert!(mentions_pi("Continued fraction for pi"));
+        assert!(!mentions_pi("Number of pieces of pizza"));
+        assert!(!mentions_pi("Fibonacci numbers"));
     }
 
     #[test]

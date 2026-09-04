@@ -1,18 +1,27 @@
 ---
 import { liveDb } from '../lib/live-db';
 import Base from '../layouts/Base.astro';
-import { deepest, earliest, examples, getMeta, rarest, type LeaderRow } from '../lib/db';
+import {
+  deepest,
+  earliest,
+  examples,
+  getMeta,
+  piApproximations,
+  rarest,
+  type LeaderRow,
+} from '../lib/db';
 import { EXAMPLES, SHORT_NAMES } from '../lib/examples';
 import { formatNumber } from '../lib/format';
 import { RESULT_CACHE } from '../lib/respond';
 
 const db = await liveDb();
 
-const [picked, deep, early, rare, meta] = await Promise.all([
+const [picked, deep, early, rare, approx, meta] = await Promise.all([
   examples(db, EXAMPLES),
   deepest(db),
   earliest(db),
   rarest(db),
+  piApproximations(db),
   getMeta(db),
 ]);
 Astro.response.headers.set('Cache-Control', RESULT_CACHE);
@@ -76,10 +85,10 @@ const label = (r: LeaderRow) => SHORT_NAMES[r.anumber] ?? r.name;
   </table>
 
   <h2>Earliest</h2>
-  <p class="muted small">Sequences whose first five terms appear soonest.</p>
+  <p class="muted small">Sequences whose first eight terms appear soonest.</p>
   <table class="leaders">
     <thead
-      ><tr><th scope="col">sequence</th><th scope="col" class="num">position of 5 terms</th></tr
+      ><tr><th scope="col">sequence</th><th scope="col" class="num">position of 8 terms</th></tr
       ></thead
     >
     <tbody>
@@ -91,7 +100,7 @@ const label = (r: LeaderRow) => SHORT_NAMES[r.anumber] ?? r.name;
                 <span class="anumber">{r.anumber}</span> {r.name}
               </a>
             </td>
-            <td class="num">{r.first5 !== null ? formatNumber(r.first5) : ''}</td>
+            <td class="num">{r.first8 !== null ? formatNumber(r.first8) : ''}</td>
           </tr>
         ))
       }
@@ -115,6 +124,38 @@ const label = (r: LeaderRow) => SHORT_NAMES[r.anumber] ?? r.name;
               </a>
             </td>
             <td class="num">{r.digits3}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <h2>Pi approximations</h2>
+  <p class="muted small">
+    Write a sequence's first terms out as one number, then reach pi with a small constant, a power
+    or root, a logarithm or an exponential, and a shift of the decimal point. Sequences whose names
+    mention pi are left out.
+  </p>
+  <table class="leaders">
+    <thead>
+      <tr>
+        <th scope="col">sequence</th>
+        <th scope="col">expression</th>
+        <th scope="col" class="num">value</th>
+        <th scope="col" class="num">digits</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        approx.map((r) => (
+          <tr>
+            <td>
+              <a href={`/${r.anumber}`}>
+                <span class="anumber">{r.anumber}</span> {SHORT_NAMES[r.anumber] ?? r.name}
+              </a>
+            </td>
+            <td class="digits expr">{r.expr}</td>
+            <td class="num">{r.value.toFixed(6)}</td>
+            <td class="num">{r.digits.toFixed(1)}</td>
           </tr>
         ))
       }

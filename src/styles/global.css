@@ -527,3 +527,7 @@ table.leaders a:hover {
     display: none;
   }
 }
+
+table.leaders td.expr {
+  white-space: nowrap;
+}
