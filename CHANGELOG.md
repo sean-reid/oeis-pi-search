@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/sean-reid/oeis-pi-search/compare/oeis-pi-search-v0.1.0...oeis-pi-search-v0.1.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **ci:** retry a d1 chunk import up to three times ([#16](https://github.com/sean-reid/oeis-pi-search/issues/16)) ([d4b8705](https://github.com/sean-reid/oeis-pi-search/commit/d4b8705cf6c6b0c51ab765e97852822f9f9e2bb8))
+* **web:** order name matches by A-number so classic sequences come first ([#18](https://github.com/sean-reid/oeis-pi-search/issues/18)) ([623eaae](https://github.com/sean-reid/oeis-pi-search/commit/623eaae0b7a41d0ce8f3ee6c0ceb94fb48859975))
+
 ## 0.1.0 (2026-09-04)
 
 
