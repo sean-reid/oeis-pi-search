@@ -39,12 +39,10 @@ jobs:
       - name: download the index from r2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/download-index.mjs data/index
       - name: compute staircases
         run: tools/target/release/pisearch oeis data/stripped.gz data/names.gz data/index data/sequences.sql --snapshot "$(date -u +%Y-%m-%d)"
       - name: import into the standby database and switch
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/import-standby.mjs data/sequences.sql

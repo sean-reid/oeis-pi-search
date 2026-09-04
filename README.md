@@ -26,7 +26,7 @@ Routes: `/A000045` for a sequence, `/digits/31415` for a digit string, `/terms/1
 
 ## Deploying
 
-Pushes to `main` build and deploy through `.github/workflows/deploy.yml` with two repository secrets, `CLOUDFLARE_API_TOKEN` (Workers Scripts, Workers Routes, D1, R2, and DNS edit on the zone) and `CLOUDFLARE_ACCOUNT_ID`. The Worker serves `oeis-pi-search.dwainosaur.com` as a custom domain and its `workers.dev` subdomain. Set the repository variable `CF_BEACON_TOKEN` to a Cloudflare Web Analytics token to enable the beacon; without it no analytics script is emitted.
+Pushes to `main` build and deploy through `.github/workflows/deploy.yml` with one repository secret, `CLOUDFLARE_API_TOKEN`, an account token with Workers Scripts, Workers KV, Workers R2, and D1 edit on the account plus Workers Routes, DNS, and SSL edit on the zone. Wrangler takes the account from the token. The Worker serves `oeis-pi-search.dwainosaur.com` as a custom domain and its `workers.dev` subdomain. Set the repository variable `CF_BEACON_TOKEN` to a Cloudflare Web Analytics token to enable the beacon; without it no analytics script is emitted.
 
 `refresh-oeis.yml` runs on the first of each month: it downloads the current OEIS dumps and the index from R2, recomputes every staircase, loads the result into whichever of the two D1 databases is not serving traffic, and flips the `live-db` key in KV to point at it. D1 blocks every query on a database while it imports, so the live one is never touched. It can also be started by hand from the Actions tab.
 
