@@ -3,7 +3,7 @@ import cloudflare from '@astrojs/cloudflare';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://oeis-pi-search.dwainosaur.com',
+  site: 'https://oeis-pi-search.seanre.id',
   output: 'server',
   adapter: cloudflare({ imageService: 'compile' }),
   session: false,
