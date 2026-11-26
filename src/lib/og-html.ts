@@ -132,7 +132,7 @@ export function ogTree(model: OgModel): OgElement {
           fontSize: 22,
           color: SOFT,
         },
-        'oeis-pi-search.dwainosaur.com',
+        'oeis-pi-search.seanre.id',
       ),
     ],
   );
