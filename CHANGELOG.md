@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/sean-reid/oeis-pi-search/compare/oeis-pi-search-v0.2.0...oeis-pi-search-v0.3.0) (2026-11-26)
+
+
+### Features
+
+* serve the site from oeis-pi-search.seanre.id ([#35](https://github.com/sean-reid/oeis-pi-search/issues/35)) ([88825cf](https://github.com/sean-reid/oeis-pi-search/commit/88825cffae8d8bfc88dfb2abe598eda5c28c33b2))
+
 ## [0.2.0](https://github.com/sean-reid/oeis-pi-search/compare/oeis-pi-search-v0.1.1...oeis-pi-search-v0.2.0) (2026-09-04)
 
 
